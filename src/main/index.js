@@ -16,13 +16,13 @@ const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 app.dock.hide()
 
 function createWindow() {
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize
+  const { width, height, x, y } = screen.getPrimaryDisplay().workArea
 
   mainWindow = new BrowserWindow({
     width: width,
     height: height,
-    x: 0,
-    y: 0,
+    x: x,
+    y: y,
     // Window trong suốt, không viền, luôn trên đỉnh
     transparent: true,
     frame: false,
