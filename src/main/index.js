@@ -80,7 +80,20 @@ function createTray() {
       },
     },
     {
-      label: '🧹 Dọn rác ngay!',
+      label: '🧹 Dọn thùng rác',
+      click: async () => {
+        const result = await cleanupService.cleanTrash()
+        mainWindow.webContents.send('clean-complete', result)
+      },
+    },
+    {
+      label: '🗂️ Dọn Cache',
+      click: () => {
+        mainWindow.webContents.send('show-cache-panel')
+      },
+    },
+    {
+      label: '🧹 Dọn tất cả',
       click: async () => {
         const result = await cleanupService.cleanAll()
         mainWindow.webContents.send('clean-complete', result)
@@ -155,6 +168,14 @@ ipcMain.handle('clean-all', async () => {
 
 ipcMain.handle('get-trash-info', async () => {
   return await cleanupService.getTrashInfo()
+})
+
+ipcMain.handle('get-cache-types', async () => {
+  return await cleanupService.getCacheTypes()
+})
+
+ipcMain.handle('clean-cache', async (_, categoryIds) => {
+  return await cleanupService.cleanCache(categoryIds)
 })
 
 ipcMain.handle('check-permissions', async () => {

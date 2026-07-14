@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import PigPet from './components/PigPet'
 import StatsPanel from './components/StatsPanel'
+import CachePanel from './components/CachePanel'
 import { usePigState } from './hooks/usePigState'
 
 const isElectron = typeof window !== 'undefined' && window.pigAPI
@@ -8,6 +9,7 @@ const isElectron = typeof window !== 'undefined' && window.pigAPI
 export default function App() {
   const [trashInfo, setTrashInfo] = useState(null)
   const [showStats, setShowStats] = useState(false)
+  const [showCache, setShowCache] = useState(false)
   const [permissionWarning, setPermissionWarning] = useState(false)
   const [isCleaning, setIsCleaning] = useState(false)
 
@@ -49,6 +51,11 @@ export default function App() {
       setShowStats(prev => !prev)
     })
 
+    // Lắng nghe show cache panel
+    const unsubCache = window.pigAPI.onShowCachePanel(() => {
+      setShowCache(prev => !prev)
+    })
+
     // Load trash info ban đầu
     window.pigAPI.getTrashInfo().then(setTrashInfo)
 
@@ -58,6 +65,7 @@ export default function App() {
       unsubHome?.()
       unsubPerm?.()
       unsubStats?.()
+      unsubCache?.()
     }
   }, [])
 
@@ -110,6 +118,17 @@ export default function App() {
           ⚠️ Cần cấp Full Disk Access<br />
           <small>System Settings → Privacy & Security → Full Disk Access</small>
         </div>
+      )}
+
+      {/* Cache Panel */}
+      {showCache && (
+        <CachePanel
+          onClose={() => setShowCache(false)}
+          onCleaned={(freedBytes) => {
+            triggerEat(freedBytes / 1024)
+            setShowCache(false)
+          }}
+        />
       )}
 
       {/* Con Heo Chính */}
