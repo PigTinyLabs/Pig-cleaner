@@ -16,6 +16,8 @@ contextBridge.exposeInMainWorld('pigAPI', {
   cleanTemp: () => ipcRenderer.invoke('clean-temp'),
   cleanAll: () => ipcRenderer.invoke('clean-all'),
   getTrashInfo: () => ipcRenderer.invoke('get-trash-info'),
+  getCacheTypes: () => ipcRenderer.invoke('get-cache-types'),
+  cleanCache: (ids) => ipcRenderer.invoke('clean-cache', ids),
 
   // Permissions
   checkPermissions: () => ipcRenderer.invoke('check-permissions'),
@@ -40,5 +42,9 @@ contextBridge.exposeInMainWorld('pigAPI', {
   onShowStats: (callback) => {
     ipcRenderer.on('show-stats', () => callback())
     return () => ipcRenderer.removeAllListeners('show-stats')
+  },
+  onShowCachePanel: (callback) => {
+    ipcRenderer.on('show-cache-panel', () => callback())
+    return () => ipcRenderer.removeAllListeners('show-cache-panel')
   },
 })
