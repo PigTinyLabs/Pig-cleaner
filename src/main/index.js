@@ -119,6 +119,7 @@ function buildTrayMenu() {
           success: true,
           type: 'all',
           freedBytes: totalFreed,
+          trash: trashResult,
         })
       },
     },
@@ -256,7 +257,8 @@ ipcMain.handle('save-settings', (_, newSettings) => {
   setupAutoClean()
 
   // Nếu vị trí thời tiết thay đổi, áp dụng ngay cho weatherService
-  if (newSettings.weatherLocation !== undefined && newSettings.weatherLocation !== prev.weatherLocation) {
+  const locChanged = JSON.stringify(newSettings.weatherLocation) !== JSON.stringify(prev.weatherLocation)
+  if (newSettings.weatherLocation !== undefined && locChanged) {
     if (newSettings.weatherLocation) {
       weatherService.setManualLocation(newSettings.weatherLocation)
     } else {
