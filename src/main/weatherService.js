@@ -19,6 +19,7 @@ let currentWeather = defaultWeather()
 let pollingTimer = null
 let updateCallback = null
 let cachedLocation = null
+let manualLocation = null // { lat, lon, city } do người dùng tự chọn trong Settings, ưu tiên hơn IP
 
 function defaultWeather() {
   return {
@@ -46,6 +47,9 @@ function fetchJson(url) {
 }
 
 async function getLocation() {
+  // Vị trí người dùng tự chọn trong Settings luôn được ưu tiên — bỏ qua
+  // hoàn toàn bước gọi IP geolocation (ipapi.co vốn hay bị rate-limit).
+  if (manualLocation) return manualLocation
   if (cachedLocation) return cachedLocation
   try {
     const data = await fetchJson('https://ipapi.co/json/')
@@ -149,6 +153,51 @@ async function fetchWeather() {
   }
 }
 
+// ─── Vị trí thủ công (Settings) ─────────────────────────────────────────────
+// Tìm địa điểm theo tên bằng API geocoding miễn phí của Open-Meteo — cùng
+// nhà cung cấp với API thời tiết đang dùng, không cần thêm API key.
+async function searchLocation(query) {
+  if (!query || !query.trim()) return []
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query.trim())}&count=8&language=vi&format=json`
+  try {
+    const data = await fetchJson(url)
+    if (!data.results) return []
+    return data.results.map(r => ({
+      lat: r.latitude,
+      lon: r.longitude,
+      city: r.name,
+      admin1: r.admin1 || '',
+      country: r.country || '',
+      // Tên hiển thị đầy đủ, vd "Đà Nẵng, Việt Nam"
+      label: [r.name, r.admin1, r.country].filter(Boolean).join(', '),
+    }))
+  } catch (err) {
+    console.warn('[Weather] Tìm địa điểm thất bại:', err.message)
+    return []
+  }
+}
+
+function setManualLocation(loc) {
+  if (loc && typeof loc.lat === 'number' && typeof loc.lon === 'number') {
+    manualLocation = { lat: loc.lat, lon: loc.lon, city: loc.city || loc.label || 'Vị trí đã chọn' }
+    cachedLocation = null // bỏ cache IP cũ, không cần nữa
+    fetchWeather() // cập nhật thời tiết ngay theo vị trí mới
+  }
+}
+
+function clearManualLocation() {
+  manualLocation = null
+  cachedLocation = null // cho phép gọi lại ipapi.co từ đầu
+  fetchWeather()
+}
+
+function getLocationInfo() {
+  return {
+    mode: manualLocation ? 'manual' : 'auto',
+    location: manualLocation || cachedLocation || null,
+  }
+}
+
 // ─── Public API ───────────────────────────────────────────────────────────────
 function start(onUpdate) {
   updateCallback = onUpdate
@@ -168,4 +217,4 @@ function getCurrent() {
   return currentWeather
 }
 
-module.exports = { start, stop, getCurrent }
+module.exports = { start, stop, getCurrent, searchLocation, setManualLocation, clearManualLocation, getLocationInfo }

@@ -46,7 +46,8 @@ async function getTrashInfo() {
   
   try {
     // Ưu tiên dùng AppleScript để lấy size của Trash vì nó không bị lỗi EPERM (Full Disk Access)
-    const { stdout } = await execAsync(`osascript -e 'tell application "Finder" to return size of trash'`)
+    // Có timeout để tránh treo vô hạn (macOS gần đây có bug Finder/AppleScript đôi khi hang)
+    const { stdout } = await execAsync(`osascript -e 'tell application "Finder" to return size of trash'`, { timeout: 8000 })
     const size = parseInt(stdout.trim(), 10)
     if (!isNaN(size)) {
       sizeBytes = size
@@ -247,6 +248,37 @@ async function cleanCache(categoryIds) {
   }
 }
 
+async function emptyTrashViaFS() {
+  // Xoá trực tiếp từng item trong ~/.Trash bằng Node fs — nhanh, kết quả
+  // biết ngay lập tức, không phụ thuộc vào Finder/AppleScript. AppleScript
+  // 'empty trash' trên các bản macOS gần đây (vd Tahoe/26) có bug đã biết:
+  // đôi khi "báo xong" nhưng Finder vẫn chưa xoá thật (chạy ngầm, bất đồng
+  // bộ), hoặc thậm chí bị treo (hang) trong 1 số trường hợp. Xoá trực tiếp
+  // qua fs tránh hoàn toàn 2 vấn đề đó.
+  // Cần Full Disk Access; nếu không có, readdirSync sẽ throw EPERM và
+  // cleanTrash() sẽ tự chuyển sang phương án AppleScript bên dưới.
+  const items = fs.readdirSync(TRASH_PATH, { withFileTypes: true })
+  let freed = 0
+  let remaining = 0
+  for (const item of items) {
+    if (item.name.startsWith('.')) continue
+    const itemPath = path.join(TRASH_PATH, item.name)
+    let itemSize = 0
+    try {
+      const stat = fs.statSync(itemPath)
+      itemSize = stat.isDirectory() ? getFolderSize(itemPath).size : stat.size
+    } catch { /* không đọc được size, coi như 0 */ }
+    try {
+      fs.rmSync(itemPath, { recursive: true, force: true })
+      freed += itemSize
+    } catch {
+      // File có thể đang mở/bị khoá — bỏ qua, tính vào phần "còn lại"
+      remaining += itemSize
+    }
+  }
+  return { freed, remaining }
+}
+
 async function cleanTrash() {
   const beforeInfo = await getTrashInfo()
   const before = beforeInfo.sizeBytes
@@ -255,15 +287,32 @@ async function cleanTrash() {
     return { success: true, type: 'trash', freedBytes: 0, remainingBytes: 0, freedFormatted: '0 B', message: 'Thùng rác đã trống!' }
   }
 
+  // Cách 1 (ưu tiên): xoá trực tiếp qua filesystem
   try {
-    // Dùng AppleScript để dọn rác (phát âm thanh chuẩn của Mac)
-    await execAsync(`osascript -e 'tell application "Finder" to empty trash'`)
+    const { freed, remaining } = await emptyTrashViaFS()
+    if (remaining > 0) {
+      console.warn(`[cleanupService] Không xoá được ${formatBytes(remaining)} qua fs (có thể do file bị khoá/đang mở)`)
+    }
+    return {
+      success: true,
+      type: 'trash',
+      freedBytes: freed,
+      remainingBytes: remaining,
+      freedFormatted: formatBytes(freed),
+      message: remaining > 0
+        ? `Đã dọn ${formatBytes(freed)}, còn ${formatBytes(remaining)} chưa xoá được (có thể có file đang mở)!`
+        : `Đã dọn ${formatBytes(freed)} rác!`,
+    }
+  } catch (fsErr) {
+    console.warn('[cleanupService] Không xoá trực tiếp qua fs được (có thể thiếu Full Disk Access), thử qua AppleScript:', fsErr.message)
+  }
 
-    // Finder xoá rác BẤT ĐỒNG BỘ dưới nền — osascript trả về ngay khi gửi
-    // xong Apple Event, không phải khi xoá xong thật sự. Trước đây code cứ
-    // tin là đã xoá hết "before" bytes, nên khi mở lại Thống Kê (query lại
-    // getTrashInfo() thật) vẫn thấy rác còn nguyên. Giờ chờ + kiểm tra lại
-    // thực tế (tối đa ~3.2s) trước khi báo kết quả cho người dùng.
+  // Cách 2 (dự phòng): AppleScript — chỉ dùng khi fs không đọc/xoá được
+  // trực tiếp (thiếu Full Disk Access). Có timeout để tránh treo vô hạn,
+  // và LUÔN kiểm tra lại thật sau khi chạy thay vì tin ngay là đã xong.
+  try {
+    await execAsync(`osascript -e 'tell application "Finder" to empty trash'`, { timeout: 8000 })
+
     let after = before
     for (let i = 0; i < 8; i++) {
       await new Promise(resolve => setTimeout(resolve, 400))
@@ -272,9 +321,8 @@ async function cleanTrash() {
     }
 
     const freed = Math.max(0, before - after)
-
     if (after > 0) {
-      console.warn(`[cleanupService] Trash vẫn còn ${formatBytes(after)} sau khi dọn (có thể do file bị khoá hoặc cần xác nhận thủ công trong Finder)`)
+      console.warn(`[cleanupService] Trash vẫn còn ${formatBytes(after)} sau khi dọn qua AppleScript (có thể do file bị khoá, cần xác nhận thủ công trong Finder, hoặc thiếu quyền Automation cho Finder trong System Settings → Privacy & Security → Automation)`)
     }
 
     return {
@@ -284,34 +332,15 @@ async function cleanTrash() {
       remainingBytes: after,
       freedFormatted: formatBytes(freed),
       message: after > 0
-        ? `Đã dọn ${formatBytes(freed)}, còn ${formatBytes(after)} chưa xoá được (có thể có file đang mở)!`
+        ? `Đã dọn ${formatBytes(freed)}, còn ${formatBytes(after)} chưa xoá được!`
         : `Đã dọn ${formatBytes(freed)} rác!`,
     }
   } catch (err) {
-    // Fallback: xóa thủ công
-    try {
-      const items = fs.readdirSync(TRASH_PATH)
-      let freed = 0
-      for (const item of items) {
-        if (item.startsWith('.')) continue
-        const itemPath = path.join(TRASH_PATH, item)
-        try {
-          const stat = getFolderSize(itemPath)
-          freed += stat.size
-          fs.rmSync(itemPath, { recursive: true, force: true })
-        } catch { /* skip */ }
-      }
-      const after = (await getTrashInfo()).sizeBytes
-      return {
-        success: true,
-        type: 'trash',
-        freedBytes: freed,
-        remainingBytes: after,
-        freedFormatted: formatBytes(freed),
-        message: `Đã dọn ${formatBytes(freed)} rác!`,
-      }
-    } catch (err2) {
-      return { success: false, type: 'trash', error: err2.message, message: 'Không thể dọn rác: ' + err2.message }
+    return {
+      success: false,
+      type: 'trash',
+      error: err.message,
+      message: 'Không thể dọn rác: ' + err.message + ' — hãy cấp quyền Full Disk Access cho app trong System Settings → Privacy & Security → Full Disk Access.',
     }
   }
 }
