@@ -274,6 +274,7 @@ function App() {
         isCleaning={isCleaning}
         cameraFollowsPig={cameraFollowsPig}
         onDoubleClick={handlePigDoubleClick}
+        onWakeUp={() => setMode('idle')}
       />
     </div>
   )
