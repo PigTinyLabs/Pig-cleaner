@@ -21,6 +21,9 @@ const DEFAULTS = {
   displayMode: 'always-on-top',
   // Camera follows pig to the sky
   cameraFollowsPig: true,
+  // Weather
+  weatherEffects: true,   // Hiệu ứng mưa, gió, sét
+  weatherAlerts: true,    // Heo phản ứng theo thời tiết (kêu nóng, lạnh, cảnh báo)
 }
 
 function load() {
