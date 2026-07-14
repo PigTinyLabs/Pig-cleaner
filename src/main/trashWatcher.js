@@ -47,7 +47,7 @@ function start(cb) {
           }
         })
       } catch {}
-    }, 30000) }
+    }, 10000) }
   }
 }
 
