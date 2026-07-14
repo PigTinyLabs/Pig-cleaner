@@ -24,6 +24,8 @@ const DEFAULTS = {
   // Weather
   weatherEffects: true,   // Hiệu ứng mưa, gió, sét
   weatherAlerts: true,    // Heo phản ứng theo thời tiết (kêu nóng, lạnh, cảnh báo)
+  // Vị trí thời tiết: null = tự động theo IP, hoặc { lat, lon, city } do người dùng chọn
+  weatherLocation: null,
 }
 
 function load() {
