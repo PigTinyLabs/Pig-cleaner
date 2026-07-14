@@ -227,6 +227,7 @@ function App() {
       try {
         // B1: Đổi sang mode sniffing để kiểm tra rác
         setMode('sniffing')
+        forceBubble('Đang tìm rác... 🐽')
         const currentTrash = await window.pigAPI.getTrashInfo()
         const currentCache = await window.pigAPI.getCacheTypes()
         const totalCacheBytes = currentCache.reduce((sum, c) => sum + c.sizeBytes, 0)
@@ -256,8 +257,16 @@ function App() {
 
         // B2: Đổi sang mode eating và tiến hành dọn
         setMode('eating')
+        forceBubble('Đang ăn... 😋')
         const result = await window.pigAPI.cleanAll()
         setIsCleaning(false)
+
+        if (result.trash?.success === false) {
+          forceBubble(`⚠️ ${result.trash.error || 'Lỗi quyền truy cập, vui lòng cấp quyền Full Disk Access!'}`)
+          setTimeout(() => setMode('idle'), 4000)
+          return
+        }
+
         if (result.freedBytes > 0) {
           triggerEat(result.freedBytes / 1024) // convert to KB
           // cleanTrash() (bên trong cleanAll) giờ đã tự chờ + xác minh thật,
