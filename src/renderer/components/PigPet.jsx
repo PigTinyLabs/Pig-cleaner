@@ -100,8 +100,6 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onMouseDown={handleDragStart}
-      onMouseMove={handleDrag}
-      onMouseUp={handleDragEnd}
       onClick={handleClick}
       title="Nhấn vào heo để dọn rác!"
     >

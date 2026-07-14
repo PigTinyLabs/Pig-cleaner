@@ -19,9 +19,9 @@ function createWindow() {
 
   mainWindow = new BrowserWindow({
     width: width,
-    height: 800,
+    height: height,
     x: 0,
-    y: Math.floor(height - 800),
+    y: 0,
     // Window trong suốt, không viền, luôn trên đỉnh
     transparent: true,
     frame: false,
@@ -55,8 +55,13 @@ function createWindow() {
     }
   })
 
-  // Cài đặt alwaysOnTop level cao hơn
-  mainWindow.setAlwaysOnTop(true, 'floating')
+  const settings = settingsStore.load()
+  if (settings.displayMode === 'desktop') {
+    mainWindow.setAlwaysOnTop(false)
+  } else {
+    // Cài đặt alwaysOnTop level cao hơn
+    mainWindow.setAlwaysOnTop(true, 'floating')
+  }
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
 }
 
@@ -234,6 +239,14 @@ ipcMain.handle('get-settings', () => {
 ipcMain.handle('save-settings', (_, newSettings) => {
   settingsStore.save(newSettings)
   setupAutoClean()
+  
+  if (mainWindow) {
+    if (newSettings.displayMode === 'desktop') {
+      mainWindow.setAlwaysOnTop(false)
+    } else {
+      mainWindow.setAlwaysOnTop(true, 'floating')
+    }
+  }
   return true
 })
 
