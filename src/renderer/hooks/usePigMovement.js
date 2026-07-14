@@ -260,7 +260,17 @@ export function usePigMovement(mode, isPanelOpen = false) {
         updateDragState(null)
       }, 600)
     }
-  }, [])
+  }, [isPanelOpen])
+
+  // Bind global drag events
+  useEffect(() => {
+    window.addEventListener('mousemove', handleDrag)
+    window.addEventListener('mouseup', handleDragEnd)
+    return () => {
+      window.removeEventListener('mousemove', handleDrag)
+      window.removeEventListener('mouseup', handleDragEnd)
+    }
+  }, [handleDrag, handleDragEnd])
 
   return {
     position,
