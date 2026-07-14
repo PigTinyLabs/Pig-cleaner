@@ -124,6 +124,15 @@ const CACHE_CATEGORIES = [
     ],
   },
   {
+    id: 'browser',
+    label: '🌐 Browser Cache',
+    paths: [
+      path.join(home, 'Library', 'Caches', 'Google', 'Chrome'),
+      path.join(home, 'Library', 'Containers', 'com.apple.Safari', 'Data', 'Library', 'Caches', 'com.apple.Safari'),
+      path.join(home, 'Library', 'Caches', 'Firefox'),
+    ],
+  },
+  {
     id: 'temp',
     label: '🗂️ Temp Files',
     paths: [
