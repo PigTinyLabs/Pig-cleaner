@@ -58,6 +58,9 @@ async function getTrashInfo() {
       const size = Number(stdout.trim())
       if (!isNaN(size)) {
         sizeBytes = size
+      } else {
+        const result = await getFolderSize(TRASH_PATH)
+        sizeBytes = result.size
       }
       fileCount = count
     }
@@ -311,7 +314,7 @@ async function cleanTrash() {
   const beforeInfo = await getTrashInfo()
   const before = beforeInfo.sizeBytes
 
-  if (before === 0) {
+  if (before === 0 && beforeInfo.fileCount === 0) {
     return { success: true, type: 'trash', freedBytes: 0, remainingBytes: 0, freedFormatted: '0 B', message: 'Thùng rác đã trống!' }
   }
 
@@ -354,9 +357,10 @@ async function cleanTrash() {
     let unchangedCount = 0
     for (let i = 0; i < 60; i++) { // Wait up to 30 seconds
       await new Promise(resolve => setTimeout(resolve, 500))
-      const currentRemaining = (await getTrashInfo()).sizeBytes
+      const currentTrash = await getTrashInfo()
+      const currentRemaining = currentTrash.sizeBytes
       
-      if (currentRemaining === 0) {
+      if (currentRemaining === 0 && currentTrash.fileCount === 0) {
         finalRemaining = 0
         break
       }
