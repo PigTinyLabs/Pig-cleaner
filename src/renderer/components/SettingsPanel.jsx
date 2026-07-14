@@ -16,6 +16,8 @@ export default function SettingsPanel({ onClose }) {
     autoCleanCategories: ['trash', 'temp'],
     displayMode: 'always-on-top',
     cameraFollowsPig: true,
+    weatherEffects: true,
+    weatherAlerts: true,
   })
   const [categories, setCategories] = useState([])
   const [saving, setSaving] = useState(false)
@@ -125,6 +127,22 @@ export default function SettingsPanel({ onClose }) {
                 onChange={e => setSettings(prev => ({ ...prev, cameraFollowsPig: e.target.checked }))}
               />
               <span className="cache-item-label">Camera bay theo heo lên mây</span>
+            </label>
+            <label className="cache-item">
+              <input
+                type="checkbox"
+                checked={settings.weatherEffects !== false}
+                onChange={e => setSettings(prev => ({ ...prev, weatherEffects: e.target.checked }))}
+              />
+              <span className="cache-item-label">Hiệu ứng thời tiết (mưa, gió, chớp sét)</span>
+            </label>
+            <label className="cache-item">
+              <input
+                type="checkbox"
+                checked={settings.weatherAlerts !== false}
+                onChange={e => setSettings(prev => ({ ...prev, weatherAlerts: e.target.checked }))}
+              />
+              <span className="cache-item-label">Heo phản ứng thời tiết (kêu nóng, lạnh, cảnh báo)</span>
             </label>
           </div>
         </div>
