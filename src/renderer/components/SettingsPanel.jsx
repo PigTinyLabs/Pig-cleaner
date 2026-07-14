@@ -14,6 +14,8 @@ export default function SettingsPanel({ onClose }) {
   const [settings, setSettings] = useState({
     autoCleanInterval: 0,
     autoCleanCategories: ['trash', 'temp'],
+    displayMode: 'always-on-top',
+    cameraFollowsPig: true,
   })
   const [categories, setCategories] = useState([])
   const [saving, setSaving] = useState(false)
@@ -87,6 +89,18 @@ export default function SettingsPanel({ onClose }) {
           </div>
 
           <div className="settings-section">
+            <div className="settings-section-title">🖥️ Chế độ hiển thị</div>
+            <select 
+              className="settings-select"
+              value={settings.displayMode || 'always-on-top'}
+              onChange={e => setSettings(prev => ({ ...prev, displayMode: e.target.value }))}
+            >
+              <option value="always-on-top">Luôn nổi trên mọi ứng dụng</option>
+              <option value="desktop">Chỉ nổi trên Desktop (bị đè)</option>
+            </select>
+          </div>
+
+          <div className="settings-section">
             <div className="settings-section-title">🗂️ Dọn các mục sau</div>
             <div className="cache-list" style={{ maxHeight: '200px' }}>
               {categories.map(cat => (
@@ -100,6 +114,18 @@ export default function SettingsPanel({ onClose }) {
                 </label>
               ))}
             </div>
+          </div>
+
+          <div className="settings-section">
+            <div className="settings-section-title">☁️ Trải nghiệm</div>
+            <label className="cache-item">
+              <input
+                type="checkbox"
+                checked={settings.cameraFollowsPig !== false}
+                onChange={e => setSettings(prev => ({ ...prev, cameraFollowsPig: e.target.checked }))}
+              />
+              <span className="cache-item-label">Camera bay theo heo lên mây</span>
+            </label>
           </div>
         </div>
 
