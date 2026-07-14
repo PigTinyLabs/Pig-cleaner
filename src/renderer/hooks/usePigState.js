@@ -42,6 +42,7 @@ export function usePigState(trashInfo) {
   const [bubble, setBubble] = useState(null)
   const [pigScale, setPigScale] = useState(1.0)
   const [totalEaten, setTotalEaten] = useState(0) // in KB
+  const [cameraFollowsPig, setCameraFollowsPig] = useState(true)
 
   const scaleRef = useRef(1.0)
   const eatenRef = useRef(0)
@@ -57,6 +58,7 @@ export function usePigState(trashInfo) {
         const s = await window.pigAPI.getSettings()
         if (s.pigScale) setPigScale(s.pigScale)
         if (s.totalEaten) setTotalEaten(s.totalEaten)
+        if (s.cameraFollowsPig !== undefined) setCameraFollowsPig(s.cameraFollowsPig)
       }
     }
     init()
@@ -162,6 +164,6 @@ export function usePigState(trashInfo) {
     setTimeout(() => setBubble(null), 4000)
   }
 
-  return { mode, bubble, pigScale, totalEaten, triggerEat, setMode, forceBubble }
+  return { mode, bubble, pigScale, totalEaten, cameraFollowsPig, triggerEat, setMode, forceBubble }
 }
 
