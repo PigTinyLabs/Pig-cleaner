@@ -67,6 +67,9 @@ function useSprite(mode) {
 
 // ─── PigPet ───────────────────────────────────────────────────────────────────
 
+const PIG_WIDTH = 150
+const PIG_HEIGHT = 150
+
 const isElectron = typeof window !== 'undefined' && window.pigAPI
 
 export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = false, isCleaning = false, cameraFollowsPig, onDoubleClick, onWakeUp }) {
