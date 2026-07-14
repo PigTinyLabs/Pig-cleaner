@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { usePigMovement } from '../hooks/usePigMovement'
+import SkyClouds from './SkyClouds'
+import GrassTrail from './GrassTrail'
 
 // ─── Sprite imports ───────────────────────────────────────────────────────────
 import idle1 from '../assets/sprites/idle.png'
@@ -64,7 +66,10 @@ function useSprite(mode) {
 }
 
 // ─── PigPet ───────────────────────────────────────────────────────────────────
-export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = false, isCleaning = false, onDoubleClick }) {
+
+const isElectron = typeof window !== 'undefined' && window.pigAPI
+
+export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = false, isCleaning = false, cameraFollowsPig, onDoubleClick }) {
   const {
     position,
     facing,
@@ -87,14 +92,21 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
   const displayMode = dragState ? `drag_${dragState}` : mode
   const currentSprite = useSprite(displayMode)
 
+  const screenHeight = window.innerHeight
+  const visualY = cameraFollowsPig ? Math.max(-screenHeight * 0.7, position.y) : position.y
+  const altitude = cameraFollowsPig ? Math.max(0, -position.y - screenHeight * 0.7) : 0
+
   const containerStyle = {
-    transform: `translate(${position.x}px, ${position.y}px) scale(${pigScale}) scaleX(${facing})`,
+    transform: `translate(${position.x}px, ${visualY}px) scale(${pigScale}) scaleX(${facing})`,
     transition: isDragging ? 'none' : 'transform 0.05s linear', // Fast transition for smooth walking
     cursor: isDragging ? 'grabbing' : 'grab',
   }
 
   return (
-    <div
+    <>
+      <SkyClouds altitude={altitude} />
+      <GrassTrail x={position.x} y={position.y} isWalking={mode === 'walking'} />
+      <div
       className={`pig-container pig-${mode}`}
       style={containerStyle}
       onMouseEnter={handleMouseEnter}
@@ -145,5 +157,6 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
         draggable={false}
       />
     </div>
+    </>
   )
 }
