@@ -16,13 +16,13 @@ const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 app.dock.hide()
 
 function createWindow() {
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize
+  const { width, height, x, y } = screen.getPrimaryDisplay().workArea
 
   mainWindow = new BrowserWindow({
     width: width,
     height: height,
-    x: 0,
-    y: 0,
+    x: x,
+    y: y,
     // Window trong suốt, không viền, luôn trên đỉnh
     transparent: true,
     frame: false,
@@ -292,6 +292,14 @@ app.whenReady().then(async () => {
   createWindow()
   createTray()
   setupAutoClean()
+
+  // Tự động thay đổi kích thước cửa sổ khi thanh Dock thay đổi trạng thái (hiện/ẩn)
+  screen.on('display-metrics-changed', (event, display, changedMetrics) => {
+    if (mainWindow && !mainWindow.isDestroyed() && changedMetrics.includes('workArea')) {
+      const { width, height, x, y } = display.workArea
+      mainWindow.setBounds({ width, height, x, y })
+    }
+  })
 
   // Áp dụng vị trí thời tiết đã lưu (nếu có) trước khi bắt đầu weather service
   const savedSettings = settingsStore.load()
