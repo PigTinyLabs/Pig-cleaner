@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import PigPet from './components/PigPet'
 import StatsPanel from './components/StatsPanel'
 import CachePanel from './components/CachePanel'
+import SettingsPanel from './components/SettingsPanel'
 import { usePigState } from './hooks/usePigState'
 
 const isElectron = typeof window !== 'undefined' && window.pigAPI
@@ -10,10 +11,12 @@ export default function App() {
   const [trashInfo, setTrashInfo] = useState(null)
   const [showStats, setShowStats] = useState(false)
   const [showCache, setShowCache] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const [permissionWarning, setPermissionWarning] = useState(false)
   const [isCleaning, setIsCleaning] = useState(false)
 
   const { mode, bubble, pigScale, totalEaten, triggerEat, setMode } = usePigState(trashInfo)
+  const isPanelOpen = showStats || showCache || showSettings || permissionWarning
 
   // Setup IPC listeners
   useEffect(() => {
@@ -56,6 +59,17 @@ export default function App() {
       setShowCache(prev => !prev)
     })
 
+    // Lắng nghe show settings panel
+    const unsubSettings = window.pigAPI.onShowSettings(() => {
+      setShowSettings(prev => !prev)
+    })
+
+    // Lắng nghe bắt đầu dọn dẹp
+    const unsubCleanStarted = window.pigAPI.onCleanStarted(() => {
+      setIsCleaning(true)
+      setMode('eating')
+    })
+
     // Load trash info ban đầu
     window.pigAPI.getTrashInfo().then(setTrashInfo)
 
@@ -66,8 +80,21 @@ export default function App() {
       unsubPerm?.()
       unsubStats?.()
       unsubCache?.()
+      unsubSettings?.()
+      unsubCleanStarted?.()
     }
   }, [])
+
+  // Manage mouse ignore globally based on panel open state
+  useEffect(() => {
+    if (isElectron) {
+      if (isPanelOpen) {
+        window.pigAPI.setIgnoreMouse(false)
+      } else {
+        window.pigAPI.setIgnoreMouse(true)
+      }
+    }
+  }, [isPanelOpen])
 
   // Double click → dọn rác
   async function handlePigDoubleClick() {
@@ -131,11 +158,17 @@ export default function App() {
         />
       )}
 
+      {/* Settings Panel */}
+      {showSettings && (
+        <SettingsPanel onClose={() => setShowSettings(false)} />
+      )}
+
       {/* Con Heo Chính */}
       <PigPet
         mode={mode}
         bubble={bubble}
         pigScale={pigScale}
+        isPanelOpen={isPanelOpen}
         onDoubleClick={handlePigDoubleClick}
       />
 
