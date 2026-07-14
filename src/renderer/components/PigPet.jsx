@@ -118,8 +118,25 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
 
   // Hiệu ứng thiên thạch: rơi quá nhanh sinh nhiệt (ma sát)
   const isFalling = !isDragging && dragVelocity.y > 10
-  const meteoriteHeat = isFalling ? Math.min(1, (dragVelocity.y - 10) / 35) : 0
+  const meteoriteHeat = isFalling ? Math.min(1, (dragVelocity.y - 30) / 120) : 0
   const isFallingFast = meteoriteHeat >= 0.4 // Bật CSS tia lửa và class lắc
+
+  const [isCharred, setIsCharred] = useState(false)
+  useEffect(() => {
+    if (meteoriteHeat >= 0.7) {
+      setIsCharred(true)
+    } else if (isCharred) {
+      if (isDragging) {
+        setIsCharred(false) // Xoá ngay nếu bị tóm lại
+      } else if (position.y >= -1) {
+        // Chạm đất thì giữ đen 2 giây rồi mới hết
+        const timer = setTimeout(() => {
+          setIsCharred(false)
+        }, 2000)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [meteoriteHeat, isCharred, isDragging, position.y])
 
   // Hiệu ứng thiếu oxy: chuyển sang màu đỏ khi bay lên quá mây (altitude > 1500)
   const redness = Math.min(1, Math.max(0, (altitude - 1500) / 2000))
@@ -164,23 +181,22 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
 
   let imageFilter = baseFilter + (wetness > 0 ? ` contrast(${1 + 0.15 * wetness}) brightness(${1 - 0.1 * wetness}) sepia(${0.2 * wetness}) hue-rotate(${190 * wetness}deg)` : '')
 
-  // Áp dụng filter thiên thạch đè lên nếu đang rơi
+  // Áp dụng filter thiên thạch đè lên nếu đang rơi hoặc đang bị cháy đen
   let meteoriteRedness = 0;
-  if (meteoriteHeat > 0) {
+  if (isCharred) {
+    // Cháy đen thui còn 2 con mắt trắng (invert làm mắt đen thành trắng, phần màu hồng thành xanh xám. Grayscale và contrast(5) ép xanh xám thành đen kịt, mắt trắng sáng)
+    meteoriteRedness = 1
+    imageFilter = `invert(1) grayscale(1) contrast(5) brightness(0.6) drop-shadow(0 0 4px rgba(0,0,0,1))`
+  } else if (meteoriteHeat > 0) {
     if (meteoriteHeat < 0.4) {
       // Vàng dần
       const p = meteoriteHeat / 0.4
       imageFilter = `sepia(${p}) hue-rotate(-10deg) saturate(${1 + p*2}) brightness(${1 + p*0.3}) drop-shadow(0 0 10px rgba(255,200,0,${p}))`
-    } else if (meteoriteHeat < 0.7) {
-      // Bốc cháy đỏ rực
+    } else {
+      // Bốc cháy đỏ rực (khi heat từ 0.4 -> 0.7)
       const p = (meteoriteHeat - 0.4) / 0.3
       meteoriteRedness = p
       imageFilter = `sepia(1) hue-rotate(${-10 - 30 * p}deg) saturate(${3 + p}) brightness(${1.3 - p*0.3}) drop-shadow(0 0 15px rgba(255,80,0,1))`
-    } else {
-      // Cháy đen thui
-      const p = (meteoriteHeat - 0.7) / 0.3
-      meteoriteRedness = 1
-      imageFilter = `sepia(${1-p}) brightness(${1 - p}) contrast(${1 + p}) drop-shadow(0 0 ${15 - 15*p}px rgba(255,80,0,${1-p}))`
     }
   }
 
@@ -231,6 +247,9 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
             <div className="spark s5"></div>
             <div className="spark s6"></div>
           </div>
+        )}
+        {meteoriteHeat >= 0.7 && (
+          <div className="meteorite-fireball"></div>
         )}
       {/* Speech Bubble */}
       {bubble && (
