@@ -251,9 +251,19 @@ ipcMain.handle('get-settings', () => {
 })
 
 ipcMain.handle('save-settings', (_, newSettings) => {
+  const prev = settingsStore.load()
   settingsStore.save(newSettings)
   setupAutoClean()
-  
+
+  // Nếu vị trí thời tiết thay đổi, áp dụng ngay cho weatherService
+  if (newSettings.weatherLocation !== undefined && newSettings.weatherLocation !== prev.weatherLocation) {
+    if (newSettings.weatherLocation) {
+      weatherService.setManualLocation(newSettings.weatherLocation)
+    } else {
+      weatherService.clearManualLocation()
+    }
+  }
+
   if (mainWindow) {
     if (newSettings.displayMode === 'desktop') {
       mainWindow.setAlwaysOnTop(false)
@@ -268,10 +278,20 @@ ipcMain.handle('get-weather', () => {
   return weatherService.getCurrent()
 })
 
+ipcMain.handle('search-location', async (_, query) => {
+  return await weatherService.searchLocation(query)
+})
+
 app.whenReady().then(async () => {
   createWindow()
   createTray()
   setupAutoClean()
+
+  // Áp dụng vị trí thời tiết đã lưu (nếu có) trước khi bắt đầu weather service
+  const savedSettings = settingsStore.load()
+  if (savedSettings.weatherLocation) {
+    weatherService.setManualLocation(savedSettings.weatherLocation)
+  }
 
   // Khởi động weather service
   weatherService.start((weatherData) => {

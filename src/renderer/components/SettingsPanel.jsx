@@ -18,9 +18,13 @@ export default function SettingsPanel({ onClose }) {
     cameraFollowsPig: true,
     weatherEffects: true,
     weatherAlerts: true,
+    weatherLocation: null,
   })
   const [categories, setCategories] = useState([])
   const [saving, setSaving] = useState(false)
+  const [locationQuery, setLocationQuery] = useState('')
+  const [locationResults, setLocationResults] = useState([])
+  const [searchingLocation, setSearchingLocation] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -57,6 +61,29 @@ export default function SettingsPanel({ onClose }) {
         : [...prev.autoCleanCategories, id]
       return { ...prev, autoCleanCategories }
     })
+  }
+
+  const handleSearchLocation = async () => {
+    if (!locationQuery.trim()) return
+    setSearchingLocation(true)
+    setLocationResults([])
+    if (isElectron) {
+      const results = await window.pigAPI.searchLocation(locationQuery)
+      setLocationResults(results)
+    }
+    setSearchingLocation(false)
+  }
+
+  const handleSelectLocation = (loc) => {
+    setSettings(prev => ({ ...prev, weatherLocation: { lat: loc.lat, lon: loc.lon, city: loc.label } }))
+    setLocationResults([])
+    setLocationQuery('')
+  }
+
+  const handleUseAutoLocation = () => {
+    setSettings(prev => ({ ...prev, weatherLocation: null }))
+    setLocationResults([])
+    setLocationQuery('')
   }
 
   const handleSave = async () => {
@@ -116,6 +143,57 @@ export default function SettingsPanel({ onClose }) {
                 </label>
               ))}
             </div>
+          </div>
+
+          <div className="settings-section">
+            <div className="settings-section-title">📍 Vị trí thời tiết</div>
+            <div style={{ fontSize: '13px', color: '#888', marginBottom: '8px' }}>
+              Hiện tại: {settings.weatherLocation
+                ? `${settings.weatherLocation.city} (tự chọn)`
+                : 'Tự động theo IP (có thể không chính xác nếu bị rate-limit)'}
+            </div>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <input
+                type="text"
+                className="settings-select"
+                style={{ flex: 1 }}
+                placeholder="Nhập tên thành phố..."
+                value={locationQuery}
+                onChange={e => setLocationQuery(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSearchLocation()}
+              />
+              <button
+                className="cache-clean-btn"
+                style={{ width: 'auto', padding: '0 14px' }}
+                onClick={handleSearchLocation}
+                disabled={searchingLocation}
+              >
+                {searchingLocation ? '...' : 'Tìm'}
+              </button>
+            </div>
+            {locationResults.length > 0 && (
+              <div className="cache-list" style={{ maxHeight: '150px', marginTop: '6px' }}>
+                {locationResults.map((loc, i) => (
+                  <div
+                    key={i}
+                    className="cache-item"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => handleSelectLocation(loc)}
+                  >
+                    <span className="cache-item-label">📍 {loc.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {settings.weatherLocation && (
+              <button
+                className="cache-clean-btn"
+                style={{ marginTop: '6px', background: '#999' }}
+                onClick={handleUseAutoLocation}
+              >
+                Dùng lại vị trí tự động (theo IP)
+              </button>
+            )}
           </div>
 
           <div className="settings-section">
