@@ -202,8 +202,8 @@ function getLocationInfo() {
 function start(onUpdate) {
   updateCallback = onUpdate
   fetchWeather()
-  // Polling mỗi 30 phút
-  pollingTimer = setInterval(fetchWeather, 30 * 60 * 1000)
+  // Polling mỗi 60 phút
+  pollingTimer = setInterval(fetchWeather, 60 * 60 * 1000)
 }
 
 function stop() {
