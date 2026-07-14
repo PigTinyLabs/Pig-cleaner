@@ -119,6 +119,7 @@ function buildTrayMenu() {
           success: true,
           type: 'all',
           freedBytes: totalFreed,
+          trash: trashResult,
         })
       },
     },
