@@ -67,9 +67,12 @@ function useSprite(mode) {
 
 // ─── PigPet ───────────────────────────────────────────────────────────────────
 
+const PIG_WIDTH = 150
+const PIG_HEIGHT = 150
+
 const isElectron = typeof window !== 'undefined' && window.pigAPI
 
-export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = false, isCleaning = false, cameraFollowsPig, onDoubleClick }) {
+export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = false, isCleaning = false, cameraFollowsPig, onDoubleClick, onWakeUp, weatherData = null }) {
   const windRef = useRef(null)
   
   const {
@@ -85,7 +88,7 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
     wasDragged,
     isWallHit,
     dragVelocity
-  } = usePigMovement(mode, isPanelOpen, windRef)
+  } = usePigMovement(mode, isPanelOpen, windRef, pigScale, weatherData)
 
   const handleClick = (e) => {
     if (!wasDragged()) {
@@ -93,7 +96,8 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
     }
   }
 
-  const displayMode = dragState ? `drag_${dragState}` : mode
+  const isBusyMode = mode === 'eating' || mode === 'sniffing' || mode === 'full'
+  const displayMode = isBusyMode ? mode : (dragState ? `drag_${dragState}` : mode)
   const currentSprite = useSprite(displayMode)
 
   const screenHeight = window.innerHeight
@@ -101,12 +105,19 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
   const altitude = cameraFollowsPig ? Math.max(0, -position.y - screenHeight * 0.7) : 0
 
   // Hiệu ứng thiếu oxy: chuyển sang màu đỏ khi bay lên quá mây (altitude > 1500)
-  // Tính độ đỏ: 0 ở 1500, tăng dần lên 1 ở 3500
   const redness = Math.min(1, Math.max(0, (altitude - 1500) / 2000))
-  // Pig mặc định màu hồng, đổi sang đỏ đậm bằng cách thêm saturate, độ tương phản (contrast), và giảm brightness xíu
-  // Hoặc dùng sepia + hue-rotate để áp màu đỏ rực
-  const imageFilter = redness > 0
-    ? `drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25)) sepia(${redness}) hue-rotate(${-50 * redness}deg) saturate(${1 + 4 * redness}) contrast(${1 + 0.5 * redness})`
+
+  // Hiệu ứng nhiệt độ thời tiết
+  const temp = weatherData?.temperature ?? null
+  const heatLevel = temp !== null && temp > 30 ? Math.min(1, (temp - 30) / 15) : 0  // 30°C→0, 45°C→1
+  const coldLevel = temp !== null && temp < 10 ? Math.min(1, (10 - temp) / 15) : 0  // 10°C→0, -5°C→1
+
+  // Kết hợp: đỏ từ altitude + đỏ từ nắng nóng, xanh lạnh từ nhiệt độ thấp
+  const totalRed = Math.min(1, redness + heatLevel * 0.7)
+  const imageFilter = totalRed > 0
+    ? `drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25)) sepia(${totalRed}) hue-rotate(${-50 * totalRed}deg) saturate(${1 + 4 * totalRed}) contrast(${1 + 0.5 * totalRed})`
+    : coldLevel > 0
+    ? `drop-shadow(0 4px 10px rgba(100, 150, 255, 0.3)) saturate(${1 - coldLevel * 0.4}) hue-rotate(${20 * coldLevel}deg) brightness(${1 - coldLevel * 0.1})`
     : `drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25))`
 
   const safeX = isNaN(position.x) ? 0 : position.x
@@ -127,7 +138,8 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
   const dragSkewX = -Math.min(25, Math.max(-25, dragVelocity.x / 3)) // Nghiêng ngược hướng kéo
 
   const containerStyle = {
-    transform: `translate(${safeX}px, ${safeY}px) scale(${safeScale})`, // bỏ scaleX(facing) ở đây
+    transform: `translate(${safeX}px, ${safeY}px) scale(${safeScale})`,
+    transformOrigin: 'bottom center',
     cursor: isDragging ? 'grabbing' : 'grab',
   }
 
@@ -138,13 +150,28 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
       <div
       className={`pig-container pig-${displayMode} ${isWallHit ? 'pig-hit-wall' : ''}`}
       style={containerStyle}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onMouseDown={handleDragStart}
       onMouseUp={handleDragEnd}
-      onClick={handleClick}
-      title="Nhấn vào heo để dọn rác!"
     >
+        <div 
+        className="pig-interact-zone"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onMouseDown={(e) => {
+          if (mode === 'sleeping') onWakeUp?.()
+          handleDragStart(e)
+        }}
+        onClick={handleClick}
+        style={{
+          width: PIG_WIDTH * 1.5,
+          height: PIG_HEIGHT * 1.5,
+          cursor: isDragging ? 'grabbing' : 'grab',
+          position: 'absolute',
+          bottom: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 10
+        }}
+      />
         <div ref={windRef} className="wind-lines">
           <div className="wind-line" style={{ left: '-30px', animationDelay: '0s' }} />
           <div className="wind-line" style={{ left: '-15px', animationDelay: '0.1s', height: '80px' }} />
@@ -181,7 +208,7 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
       )}
 
       {/* ZZZ khi ngủ */}
-      {mode === 'sleeping' && (
+      {mode === 'sleeping' && !isDragging && !dragState && (
         <div className="zzz">z z z</div>
       )}
 

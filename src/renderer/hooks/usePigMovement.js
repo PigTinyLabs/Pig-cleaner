@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 
 const isElectron = typeof window !== 'undefined' && window.pigAPI
 
-export function usePigMovement(mode, isPanelOpen = false, windRef = null) {
+export function usePigMovement(mode, isPanelOpen = false, windRef = null, pigScale = 1.0, weatherData = null) {
   // position.y = 0 means on the floor (bottom of screen). Negative y means in the air.
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [screenSize, setScreenSize] = useState({ width: 800, height: 600 })
@@ -15,6 +15,12 @@ export function usePigMovement(mode, isPanelOpen = false, windRef = null) {
   const dragStateRef = useRef(null)
   const wallHitTimeoutRef = useRef(null)
   const landedTimeoutRef = useRef(null)
+  const pigScaleRef = useRef(pigScale)
+  const weatherRef = useRef(weatherData)
+  
+  // Cập nhật refs mỗi khi props thay đổi
+  useEffect(() => { pigScaleRef.current = pigScale }, [pigScale])
+  useEffect(() => { weatherRef.current = weatherData }, [weatherData])
 
   const updateDragState = useCallback((newState) => {
     let resolvedState = typeof newState === 'function' ? newState(dragStateRef.current) : newState
@@ -105,7 +111,7 @@ export function usePigMovement(mode, isPanelOpen = false, windRef = null) {
         setDragVelocity({ x: dragVx, y: dragVy })
       } else if (state.y < 0) {
         // Vật lý rơi rớt
-        state.vy += 1.5 // Gia tốc rơi
+        state.vy += 1.5 * pigScaleRef.current // Gia tốc rơi, tỷ lệ theo khối lượng heo
         state.y += state.vy
         updateDragState('falling')
         
@@ -185,6 +191,38 @@ export function usePigMovement(mode, isPanelOpen = false, windRef = null) {
         state.vx = 0
       }
 
+      // ─── Vật lý gió thời tiết ────────────────────────────────────────────
+      const wx = weatherRef.current
+      if (wx && !state.isDragging) {
+        const windSpeed = wx.windSpeed || 0
+        const forceX = wx.windForceX || 0 // -1..+1
+        const mass = pigScaleRef.current   // heo to = nặng = ít bị gió
+
+        if (windSpeed > 0 && state.y === 0) {
+          // Lực gió ngang khi đứng trên đất
+          // windForceX > 0 = gió thổi sang phải
+          const windAccel = (forceX * windSpeed * 0.005) / mass
+
+          // Heo gầy (scale < 1.1) bị gió trôi kể cả khi đứng im
+          const isThin = pigScaleRef.current < 1.1
+          if (windSpeed > 30 && isThin) {
+            state.vx += windAccel * 1.5
+          } else if (Math.abs(state.vx) > 0.3) {
+            // Heo đang di chuyển → tăng tốc hoặc giảm tốc theo hướng gió
+            state.vx += windAccel * 0.6
+          }
+        }
+
+        // Bão (windSpeed > 60) → thỉnh thoảng thổi heo lên trời
+        if (wx.isStorm && state.y === 0 && !state.isDragging) {
+          if (Math.random() < 0.008) { // ~0.8% mỗi frame = khoảng 15 giây trung bình
+            const liftForce = -(windSpeed / mass) * (0.3 + Math.random() * 0.4)
+            state.vy = Math.max(liftForce, -25) // giới hạn tối đa
+            state.y = -1 // thoát khỏi đất để vật lý rơi kích hoạt
+          }
+        }
+      }
+
       // Xử lý hiệu ứng gió (wind lines) khi bay lên hoặc rơi xuống nhanh
       if (windRef && windRef.current) {
         if (!state.isDragging && Math.abs(state.vy) > 15) {
@@ -210,7 +248,8 @@ export function usePigMovement(mode, isPanelOpen = false, windRef = null) {
 
     return () => {
       clearInterval(interval)
-      clearTimeout(landedTimeoutRef.current)
+      // Không clearTimeout ở đây để đảm bảo state landed luôn được giải phóng sau 600ms
+      // kể cả khi effect bị re-run do thay đổi mode
     }
   }, [mode, screenSize])
 
@@ -289,8 +328,10 @@ export function usePigMovement(mode, isPanelOpen = false, windRef = null) {
         const first = history[0]
         const dt = last.time - first.time
         if (dt > 0 && dt < 200) { // Nếu nhả chuột trong vòng 200ms từ lúc di chuyển 5 frame cuối
-          stateRef.current.vx = ((last.x - first.x) / dt) * 16 // Scale to frames
-          stateRef.current.vy = ((last.y - first.y) / dt) * 16
+          // Heo càng to thì càng nặng: scale = 1.0 → mass = 1.0, scale = 2.5 → mass = 2.5
+          const mass = pigScaleRef.current
+          stateRef.current.vx = ((last.x - first.x) / dt) * 16 / mass
+          stateRef.current.vy = ((last.y - first.y) / dt) * 16 / mass
         } else {
           stateRef.current.vx = 0
           stateRef.current.vy = 0
