@@ -812,3 +812,38 @@ body,
   0% { transform: translateX(-2px) translateY(-1px); }
   100% { transform: translateX(2px) translateY(1px); }
 }
+
+/* ─── Meteorite Fireball ──────────────────────────────────────────────────── */
+.meteorite-fireball {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  width: 140px;
+  height: 140px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 10%, rgba(255, 235, 59, 0.9) 30%, rgba(255, 87, 34, 0.8) 60%, transparent 80%);
+  border-radius: 50%;
+  filter: blur(8px) drop-shadow(0 -10px 20px #ff0000);
+  animation: fireballFlicker 0.15s infinite alternate;
+  z-index: 50;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.meteorite-fireball::after {
+  content: '';
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  width: 90px;
+  height: 140px;
+  transform: translateX(-50%);
+  background: linear-gradient(to top, rgba(255, 87, 34, 0.8), transparent);
+  filter: blur(12px);
+  border-radius: 50%;
+}
+
+@keyframes fireballFlicker {
+  0% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+}
