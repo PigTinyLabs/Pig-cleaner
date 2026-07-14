@@ -14,6 +14,7 @@ export default function SettingsPanel({ onClose }) {
   const [settings, setSettings] = useState({
     autoCleanInterval: 0,
     autoCleanCategories: ['trash', 'temp'],
+    displayMode: 'always-on-top',
   })
   const [categories, setCategories] = useState([])
   const [saving, setSaving] = useState(false)
@@ -83,6 +84,18 @@ export default function SettingsPanel({ onClose }) {
               {INTERVAL_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
+            </select>
+          </div>
+
+          <div className="settings-section">
+            <div className="settings-section-title">🖥️ Chế độ hiển thị</div>
+            <select 
+              className="settings-select"
+              value={settings.displayMode || 'always-on-top'}
+              onChange={e => setSettings(prev => ({ ...prev, displayMode: e.target.value }))}
+            >
+              <option value="always-on-top">Luôn nổi trên mọi ứng dụng</option>
+              <option value="desktop">Chỉ nổi trên Desktop (bị đè)</option>
             </select>
           </div>
 

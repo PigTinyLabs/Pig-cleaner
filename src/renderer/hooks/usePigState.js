@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 // Trạng thái: idle → walking → sniffing → eating → sleeping → full
 // Cycle ngẫu nhiên dựa trên context
@@ -42,6 +42,47 @@ export function usePigState(trashInfo) {
   const [bubble, setBubble] = useState(null)
   const [pigScale, setPigScale] = useState(1.0)
   const [totalEaten, setTotalEaten] = useState(0) // in KB
+
+  const scaleRef = useRef(1.0)
+  const eatenRef = useRef(0)
+
+  // Keep refs in sync
+  useEffect(() => { scaleRef.current = pigScale }, [pigScale])
+  useEffect(() => { eatenRef.current = totalEaten }, [totalEaten])
+
+  // 1. Load initial settings
+  useEffect(() => {
+    async function init() {
+      if (window.pigAPI) {
+        const s = await window.pigAPI.getSettings()
+        if (s.pigScale) setPigScale(s.pigScale)
+        if (s.totalEaten) setTotalEaten(s.totalEaten)
+      }
+    }
+    init()
+  }, [])
+
+  // 2. Shrink pig over time (0.001 per second)
+  useEffect(() => {
+    const shrinkInterval = setInterval(() => {
+      setPigScale(prev => Math.max(1.0, prev - 0.001))
+    }, 1000)
+    return () => clearInterval(shrinkInterval)
+  }, [])
+
+  // 3. Save to settings every 10s if changed
+  useEffect(() => {
+    if (!window.pigAPI) return
+    const saveInterval = setInterval(async () => {
+      const s = await window.pigAPI.getSettings()
+      if (s.pigScale !== scaleRef.current || s.totalEaten !== eatenRef.current) {
+        s.pigScale = scaleRef.current
+        s.totalEaten = eatenRef.current
+        await window.pigAPI.saveSettings(s)
+      }
+    }, 10000)
+    return () => clearInterval(saveInterval)
+  }, [])
 
   // Hiện speech bubble với timeout
   function showBubble(quotes, duration = 3000) {
@@ -100,14 +141,10 @@ export function usePigState(trashInfo) {
     setMode('eating')
     showBubble(EAT_QUOTES)
 
-    // Tăng kích thước: logarithmic scale
-    // 10 MB  → +0.01 (nhích nhẹ)
-    // 100 MB → +0.05
-    // 1 GB   → +0.10
-    // 5 GB   → +0.15
+    // Tăng kích thước: đảm bảo luôn có base tăng 2% (0.02) để dễ nhận thấy
     const freedMB = (freedKB || 0) / 1024
     const growth = freedMB > 0
-      ? Math.min(0.15, Math.log10(1 + freedMB / 10) * 0.1)
+      ? 0.02 + Math.min(0.2, Math.log10(1 + freedMB) * 0.03)
       : 0
 
     setPigScale(prev => Math.min(prev + growth, 2.5))
