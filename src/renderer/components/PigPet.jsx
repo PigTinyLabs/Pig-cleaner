@@ -69,7 +69,7 @@ function useSprite(mode) {
 
 const isElectron = typeof window !== 'undefined' && window.pigAPI
 
-export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = false, isCleaning = false, cameraFollowsPig, onDoubleClick }) {
+export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = false, isCleaning = false, cameraFollowsPig, onDoubleClick, onWakeUp }) {
   const windRef = useRef(null)
   
   const {
@@ -140,13 +140,28 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
       <div
       className={`pig-container pig-${displayMode} ${isWallHit ? 'pig-hit-wall' : ''}`}
       style={containerStyle}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onMouseDown={handleDragStart}
       onMouseUp={handleDragEnd}
-      onClick={handleClick}
-      title="Nhấn vào heo để dọn rác!"
     >
+        <div 
+        className="pig-interact-zone"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onMouseDown={(e) => {
+          if (mode === 'sleeping') onWakeUp?.()
+          handleDragStart(e)
+        }}
+        onClick={handleClick}
+        style={{
+          width: PIG_WIDTH * 1.5,
+          height: PIG_HEIGHT * 1.5,
+          cursor: isDragging ? 'grabbing' : 'grab',
+          position: 'absolute',
+          bottom: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 10
+        }}
+      />
         <div ref={windRef} className="wind-lines">
           <div className="wind-line" style={{ left: '-30px', animationDelay: '0s' }} />
           <div className="wind-line" style={{ left: '-15px', animationDelay: '0.1s', height: '80px' }} />
@@ -183,7 +198,7 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
       )}
 
       {/* ZZZ khi ngủ */}
-      {mode === 'sleeping' && (
+      {mode === 'sleeping' && !isDragging && !dragState && (
         <div className="zzz">z z z</div>
       )}
 
