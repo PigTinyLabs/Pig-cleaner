@@ -3,7 +3,9 @@ import PigPet from './components/PigPet'
 import StatsPanel from './components/StatsPanel'
 import CachePanel from './components/CachePanel'
 import SettingsPanel from './components/SettingsPanel'
+import WeatherEffects from './components/WeatherEffects'
 import { usePigState } from './hooks/usePigState'
+import { useWeather } from './hooks/useWeather'
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -46,9 +48,62 @@ function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [permissionWarning, setPermissionWarning] = useState(false)
   const [isCleaning, setIsCleaning] = useState(false)
+  const [weatherSettings, setWeatherSettings] = useState({ weatherEffects: true, weatherAlerts: true })
 
   const { mode, bubble, pigScale, totalEaten, cameraFollowsPig, reloadSettings, triggerEat, setMode, forceBubble } = usePigState(trashInfo)
   const isPanelOpen = showStats || showCache || showSettings || permissionWarning
+  const weather = useWeather()
+
+  // Load weather settings khi app khởi động
+  useEffect(() => {
+    if (isElectron) {
+      window.pigAPI.getSettings().then(s => {
+        setWeatherSettings({
+          weatherEffects: s.weatherEffects !== false,
+          weatherAlerts: s.weatherAlerts !== false,
+        })
+      })
+    }
+  }, [])
+
+  // Reload settings khi đóng Settings panel
+  const handleReloadSettings = () => {
+    reloadSettings()
+    if (isElectron) {
+      window.pigAPI.getSettings().then(s => {
+        setWeatherSettings({
+          weatherEffects: s.weatherEffects !== false,
+          weatherAlerts: s.weatherAlerts !== false,
+        })
+      })
+    }
+  }
+
+  // Phản ứng thời tiết của heo
+  useEffect(() => {
+    if (!weatherSettings.weatherAlerts) return
+    const { condition, temperature, windSpeed, upcomingCondition } = weather
+
+    let msg = null
+
+    // Cảnh báo thời tiết sắp tới
+    if (upcomingCondition === 'thunderstorm') msg = '⛈️ Bão sắp đến! Trú ẩn nào!'
+    else if (upcomingCondition === 'rain') msg = '🌧️ Sắp mưa rồi! Ướt thôi...'
+    else if (upcomingCondition === 'drizzle') msg = '🌦️ Sắp có mưa phùn!'
+    // Thời tiết hiện tại
+    else if (windSpeed > 60) msg = '🌪️ Gió quá mạnh! Tôi sắp bay...'
+    else if (windSpeed > 40) msg = '🌬️ Gió mạnh quá đó!'
+    else if (condition === 'thunderstorm') msg = '⚡️ Trời nổi giận!'
+    else if (condition === 'rain') msg = '💧 Ồi! Ướt rồi! Lạnh quá!'
+    else if (condition === 'snow') msg = '❄️ Tuyết rơi! Lạnh quá đi!'
+    else if (condition === 'clear' && temperature > 35) msg = '🔥 Nắng nóng cực! Cháy da rồi!'
+    else if (condition === 'clear' && temperature > 30) msg = '☀️ Nóng quá! Cho tôi nghỉ tí!'
+    else if (temperature !== null && temperature < 10) msg = '🥶 Lạnh cắt da luôn!'
+    else if (temperature !== null && temperature < 18) msg = '🧊 Tôi đang thấy lạnh!'
+
+    if (msg) setTimeout(() => forceBubble(msg), 3000)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weather.condition, weather.upcomingCondition, weatherSettings.weatherAlerts])
 
   // Setup IPC listeners
   useEffect(() => {
@@ -126,8 +181,8 @@ function App() {
       setIsCleaning(false)
       if (data.freedBytes > 0) {
         triggerEat(data.freedBytes / 1024)
-        const newInfo = await window.pigAPI.getTrashInfo()
-        setTrashInfo(newInfo)
+        // Lạc quan set trash về 0 vì Finder có thể xóa chậm ngầm
+        setTrashInfo({ sizeBytes: 0, sizeFormatted: '0 B', fileCount: 0 })
       } else {
         forceBubble('Đã dọn xong!')
         setTimeout(() => setMode('idle'), 1500)
@@ -204,9 +259,8 @@ function App() {
         setIsCleaning(false)
         if (result.freedBytes > 0) {
           triggerEat(result.freedBytes / 1024) // convert to KB
-          // Cập nhật trash info sau khi dọn
-          const newInfo = await window.pigAPI.getTrashInfo()
-          setTrashInfo(newInfo)
+          // Lạc quan set trash về 0
+          setTrashInfo({ sizeBytes: 0, sizeFormatted: '0 B', fileCount: 0 })
         } else {
           forceBubble('Đã dọn xong!')
           setTimeout(() => setMode('idle'), 1500)
@@ -228,6 +282,8 @@ function App() {
 
   return (
     <div className="pig-wrapper">
+      {/* Weather visual effects (respects settings toggle) */}
+      {weatherSettings.weatherEffects && <WeatherEffects weather={weather} />}
       {/* Stats Panel */}
       {showStats && (
         <StatsPanel
@@ -261,7 +317,7 @@ function App() {
       {showSettings && (
         <SettingsPanel onClose={() => {
           setShowSettings(false)
-          reloadSettings()
+          handleReloadSettings()
         }} />
       )}
 
@@ -274,6 +330,8 @@ function App() {
         isCleaning={isCleaning}
         cameraFollowsPig={cameraFollowsPig}
         onDoubleClick={handlePigDoubleClick}
+        onWakeUp={() => setMode('idle')}
+        weatherData={weatherSettings.weatherAlerts ? weather : null}
       />
     </div>
   )

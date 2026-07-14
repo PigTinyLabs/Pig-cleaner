@@ -691,3 +691,38 @@ body,
   80% { opacity: 1; transform: scale(1) translateY(0); }
   100% { opacity: 0; transform: scale(0.8) translateY(10px); }
 }
+
+/* ─── Weather Animations ──────────────────────────────────────────────────── */
+@keyframes rain-fall {
+  0%   { transform: translateY(-40px) skewX(var(--skew, 0deg)); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(110vh) skewX(var(--skew, 0deg)); opacity: 0; }
+}
+
+@keyframes snow-fall {
+  0%   { transform: translateY(-20px) translateX(0); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 0.8; }
+  100% { transform: translateY(105vh) translateX(var(--drift, 0px)); opacity: 0; }
+}
+
+@keyframes wind-streak-right {
+  0%   { transform: translateX(0); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 0.6; }
+  100% { transform: translateX(110vw); opacity: 0; }
+}
+
+@keyframes wind-streak-left {
+  0%   { transform: translateX(0); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 0.6; }
+  100% { transform: translateX(-110vw); opacity: 0; }
+}
+
+@keyframes lightning-flash {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.2; }
+  100% { opacity: 0; }
+}

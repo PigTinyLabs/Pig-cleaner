@@ -4,6 +4,7 @@ const trashWatcher = require('./trashWatcher')
 const cleanupService = require('./cleanupService')
 const permissions = require('./permissions')
 const settingsStore = require('./settings')
+const weatherService = require('./weatherService')
 
 let mainWindow
 let tray
@@ -65,14 +66,20 @@ function createWindow() {
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
 }
 
-function createTray() {
-  const iconPath = isDev 
-    ? path.join(__dirname, '../../src/renderer/assets/tray-icon.png')
-    : path.join(process.resourcesPath, 'assets/tray-icon.png')
-    
-  tray = new Tray(nativeImage.createFromPath(iconPath))
+function buildTrayMenu() {
+  const w = weatherService.getCurrent()
+  const weatherLabel = w.description || '🌤️ Đang tải thời tiết...'
+  const tempLabel = w.temperature !== null && w.temperature !== undefined ? ` (${Math.round(w.temperature)}°C)` : ''
+  const upcomingLabel = w.upcomingCondition ? ` | Sắp: ${{
+    rain: '🌧️ Mưa', thunderstorm: '⛈️ Bão', drizzle: '🌦️ Mưa nhẹ', snow: '❄️ Tuyết'
+  }[w.upcomingCondition] || ''}` : ''
 
   const contextMenu = Menu.buildFromTemplate([
+    {
+      label: `🌤️ ${weatherLabel}${tempLabel}${upcomingLabel}`,
+      enabled: false,
+    },
+    { type: 'separator' },
     {
       label: '🐷 Gọi heo về góc phải',
       click: () => {
@@ -108,12 +115,10 @@ function createTray() {
         const trashResult = await cleanupService.cleanTrash()
         const cacheResult = await cleanupService.cleanCache(settings.manualCleanCategories.filter(c => c !== 'trash'))
         const totalFreed = (trashResult.freedBytes || 0) + (cacheResult.freedBytes || 0)
-
         mainWindow.webContents.send('clean-complete', {
           success: true,
           type: 'all',
           freedBytes: totalFreed,
-          freedFormatted: cleanupService.getTrashInfo().sizeFormatted, // It's re-calculated in App.jsx usually, but we can pass dummy string. Actually we can format it.
         })
       },
     },
@@ -141,6 +146,15 @@ function createTray() {
 
   tray.setToolTip('Heo Ăn Rác 🐷')
   tray.setContextMenu(contextMenu)
+}
+
+function createTray() {
+  const iconPath = isDev
+    ? path.join(__dirname, '../../src/renderer/assets/tray-icon.png')
+    : path.join(process.resourcesPath, 'assets/tray-icon.png')
+
+  tray = new Tray(nativeImage.createFromPath(iconPath))
+  buildTrayMenu()
 }
 
 function setupAutoClean() {
@@ -250,10 +264,23 @@ ipcMain.handle('save-settings', (_, newSettings) => {
   return true
 })
 
+ipcMain.handle('get-weather', () => {
+  return weatherService.getCurrent()
+})
+
 app.whenReady().then(async () => {
   createWindow()
   createTray()
   setupAutoClean()
+
+  // Khởi động weather service
+  weatherService.start((weatherData) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('weather-update', weatherData)
+    }
+    // Cập nhật tray menu với thời tiết mới
+    if (tray && !tray.isDestroyed()) buildTrayMenu()
+  })
 
   // Kiểm tra permissions sau khi window tạo
   setTimeout(async () => {
