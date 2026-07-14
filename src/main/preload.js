@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('pigAPI', {
 
   // Weather
   getWeather: () => ipcRenderer.invoke('get-weather'),
+  searchLocation: (query) => ipcRenderer.invoke('search-location', query),
 
   // Event listeners (Main → Renderer)
   onTrashChanged: (callback) => {
