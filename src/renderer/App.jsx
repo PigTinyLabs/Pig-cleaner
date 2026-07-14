@@ -15,7 +15,7 @@ export default function App() {
   const [permissionWarning, setPermissionWarning] = useState(false)
   const [isCleaning, setIsCleaning] = useState(false)
 
-  const { mode, bubble, pigScale, totalEaten, triggerEat, setMode, forceBubble } = usePigState(trashInfo)
+  const { mode, bubble, pigScale, totalEaten, cameraFollowsPig, triggerEat, setMode, forceBubble } = usePigState(trashInfo)
   const isPanelOpen = showStats || showCache || showSettings || permissionWarning
 
   // Setup IPC listeners
@@ -187,6 +187,7 @@ export default function App() {
         pigScale={pigScale}
         isPanelOpen={isPanelOpen}
         isCleaning={isCleaning}
+        cameraFollowsPig={cameraFollowsPig}
         onDoubleClick={handlePigDoubleClick}
       />
     </div>

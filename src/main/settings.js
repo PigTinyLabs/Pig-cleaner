@@ -19,6 +19,8 @@ const DEFAULTS = {
   totalEaten: 0,
   // Display mode: 'always-on-top' or 'desktop'
   displayMode: 'always-on-top',
+  // Camera follows pig to the sky
+  cameraFollowsPig: true,
 }
 
 function load() {
