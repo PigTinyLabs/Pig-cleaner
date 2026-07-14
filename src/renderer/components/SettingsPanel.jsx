@@ -222,6 +222,14 @@ export default function SettingsPanel({ onClose }) {
               />
               <span className="cache-item-label">Heo phản ứng thời tiết (kêu nóng, lạnh, cảnh báo)</span>
             </label>
+            <label className="cache-item">
+              <input
+                type="checkbox"
+                checked={settings.unlimitedPigSize === true}
+                onChange={e => setSettings(prev => ({ ...prev, unlimitedPigSize: e.target.checked }))}
+              />
+              <span className="cache-item-label">Heo ăn rác tăng kích thước không giới hạn</span>
+            </label>
           </div>
         </div>
 

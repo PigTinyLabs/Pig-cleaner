@@ -43,13 +43,16 @@ export function usePigState(trashInfo) {
   const [pigScale, setPigScale] = useState(1.0)
   const [totalEaten, setTotalEaten] = useState(0) // in KB
   const [cameraFollowsPig, setCameraFollowsPig] = useState(true)
+  const [unlimitedPigSize, setUnlimitedPigSize] = useState(false)
 
   const scaleRef = useRef(1.0)
   const eatenRef = useRef(0)
+  const unlimitedRef = useRef(false)
 
   // Keep refs in sync
   useEffect(() => { scaleRef.current = pigScale }, [pigScale])
   useEffect(() => { eatenRef.current = totalEaten }, [totalEaten])
+  useEffect(() => { unlimitedRef.current = unlimitedPigSize }, [unlimitedPigSize])
 
   const reloadSettings = async () => {
     if (window.pigAPI) {
@@ -57,6 +60,7 @@ export function usePigState(trashInfo) {
       if (s.pigScale) setPigScale(s.pigScale)
       if (s.totalEaten) setTotalEaten(s.totalEaten)
       if (s.cameraFollowsPig !== undefined) setCameraFollowsPig(s.cameraFollowsPig)
+      if (s.unlimitedPigSize !== undefined) setUnlimitedPigSize(s.unlimitedPigSize)
     }
   }
 
@@ -153,6 +157,7 @@ export function usePigState(trashInfo) {
 
     setPigScale(prev => {
       const next = prev + (isNaN(growth) ? 0 : growth)
+      if (unlimitedRef.current) return isNaN(next) ? 1.0 : next
       return isNaN(next) ? 1.0 : Math.min(next, 2.5)
     })
     setTotalEaten(prev => prev + (isNaN(freedKB) ? 0 : freedKB))
