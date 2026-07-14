@@ -25,15 +25,15 @@ import drag3 from '../assets/sprites/drag3.png'
 // ─── Animation configs ────────────────────────────────────────────────────────
 // fps: frames per second, frames: array of images, loop: boolean
 const ANIMATIONS = {
-  idle:     { frames: [idle1, idle1, idle1, wink, idle2, idle1, idle3], fps: 3, loop: true },
-  walking:  { frames: [walk1, walk2, walk3, walk4, walk5], fps: 8, loop: true },
+  idle: { frames: [idle1, idle1, idle1, wink, idle2, idle1, idle3], fps: 3, loop: true },
+  walking: { frames: [walk1, walk2, walk3], fps: 8, loop: true },
   sniffing: { frames: [sniff, idle1], fps: 2, loop: true },
-  eating:   { frames: [happy1, happy2, happy1, happy2], fps: 6, loop: true },
-  full:     { frames: [happy2, happy1], fps: 2, loop: true },
+  eating: { frames: [happy1, happy2, happy1, happy2], fps: 6, loop: true },
+  full: { frames: [happy2, happy1], fps: 2, loop: true },
   sleeping: { frames: [sleep1, sleep2, sleep3, sleep4], fps: 1.5, loop: true },
-  drag_held:    { frames: [drag1], fps: 1, loop: false },
+  drag_held: { frames: [drag1], fps: 1, loop: false },
   drag_falling: { frames: [drag2], fps: 1, loop: false },
-  drag_landed:  { frames: [drag3], fps: 1, loop: false },
+  drag_landed: { frames: [drag3], fps: 1, loop: false },
 }
 
 // ─── useSprite hook ───────────────────────────────────────────────────────────
