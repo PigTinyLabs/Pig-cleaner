@@ -15,6 +15,7 @@ export default function SettingsPanel({ onClose }) {
     autoCleanInterval: 0,
     autoCleanCategories: ['trash', 'temp'],
     displayMode: 'always-on-top',
+    cameraFollowsPig: true,
   })
   const [categories, setCategories] = useState([])
   const [saving, setSaving] = useState(false)
@@ -113,6 +114,18 @@ export default function SettingsPanel({ onClose }) {
                 </label>
               ))}
             </div>
+          </div>
+
+          <div className="settings-section">
+            <div className="settings-section-title">☁️ Trải nghiệm</div>
+            <label className="cache-item">
+              <input
+                type="checkbox"
+                checked={settings.cameraFollowsPig !== false}
+                onChange={e => setSettings(prev => ({ ...prev, cameraFollowsPig: e.target.checked }))}
+              />
+              <span className="cache-item-label">Camera bay theo heo lên mây</span>
+            </label>
           </div>
         </div>
 
