@@ -14,6 +14,11 @@ const DEFAULTS = {
   autoCleanCategories: ['trash', 'temp', 'npm', 'yarn'],
   // Which categories to include when user manually triggers "clean all"
   manualCleanCategories: ['trash', 'system', 'temp', 'npm', 'yarn', 'brew'],
+  // Persistent pig state
+  pigScale: 1.0,
+  totalEaten: 0,
+  // Display mode: 'always-on-top' or 'desktop'
+  displayMode: 'always-on-top',
 }
 
 function load() {
