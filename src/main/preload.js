@@ -26,6 +26,9 @@ contextBridge.exposeInMainWorld('pigAPI', {
   // Permissions
   checkPermissions: () => ipcRenderer.invoke('check-permissions'),
 
+  // Weather
+  getWeather: () => ipcRenderer.invoke('get-weather'),
+
   // Event listeners (Main → Renderer)
   onTrashChanged: (callback) => {
     ipcRenderer.on('trash-changed', (_, data) => callback(data))
@@ -62,5 +65,9 @@ contextBridge.exposeInMainWorld('pigAPI', {
   onCleanStarted: (callback) => {
     ipcRenderer.on('clean-started', () => callback())
     return () => ipcRenderer.removeAllListeners('clean-started')
+  },
+  onWeatherUpdate: (callback) => {
+    ipcRenderer.on('weather-update', (_, data) => callback(data))
+    return () => ipcRenderer.removeAllListeners('weather-update')
   },
 })
