@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 // Trạng thái: idle → walking → sniffing → eating → sleeping → full
 // Cycle ngẫu nhiên dựa trên context
@@ -42,6 +42,53 @@ export function usePigState(trashInfo) {
   const [bubble, setBubble] = useState(null)
   const [pigScale, setPigScale] = useState(1.0)
   const [totalEaten, setTotalEaten] = useState(0) // in KB
+  const [cameraFollowsPig, setCameraFollowsPig] = useState(true)
+
+  const scaleRef = useRef(1.0)
+  const eatenRef = useRef(0)
+
+  // Keep refs in sync
+  useEffect(() => { scaleRef.current = pigScale }, [pigScale])
+  useEffect(() => { eatenRef.current = totalEaten }, [totalEaten])
+
+  const reloadSettings = async () => {
+    if (window.pigAPI) {
+      const s = await window.pigAPI.getSettings()
+      if (s.pigScale) setPigScale(s.pigScale)
+      if (s.totalEaten) setTotalEaten(s.totalEaten)
+      if (s.cameraFollowsPig !== undefined) setCameraFollowsPig(s.cameraFollowsPig)
+    }
+  }
+
+  // 1. Load initial settings
+  useEffect(() => {
+    reloadSettings()
+  }, [])
+
+  // 2. Shrink pig over time (0.001 per second)
+  useEffect(() => {
+    const shrinkInterval = setInterval(() => {
+      setPigScale(prev => {
+        if (isNaN(prev)) return 1.0;
+        return Math.max(1.0, prev - 0.001)
+      })
+    }, 1000)
+    return () => clearInterval(shrinkInterval)
+  }, [])
+
+  // 3. Save to settings every 10s if changed
+  useEffect(() => {
+    if (!window.pigAPI) return
+    const saveInterval = setInterval(async () => {
+      const s = await window.pigAPI.getSettings()
+      if (s.pigScale !== scaleRef.current || s.totalEaten !== eatenRef.current) {
+        s.pigScale = scaleRef.current
+        s.totalEaten = eatenRef.current
+        await window.pigAPI.saveSettings(s)
+      }
+    }, 10000)
+    return () => clearInterval(saveInterval)
+  }, [])
 
   // Hiện speech bubble với timeout
   function showBubble(quotes, duration = 3000) {
@@ -96,30 +143,37 @@ export function usePigState(trashInfo) {
   }, [mode])
 
   // Hành động ăn — freedKB là số KB đã giải phóng
-  function triggerEat(freedKB) {
+  const triggerEat = useCallback((freedKB) => {
     setMode('eating')
-    showBubble(EAT_QUOTES)
-
-    // Tăng kích thước: logarithmic scale
-    // 10 MB  → +0.01 (nhích nhẹ)
-    // 100 MB → +0.05
-    // 1 GB   → +0.10
-    // 5 GB   → +0.15
-    const freedMB = (freedKB || 0) / 1024
-    const growth = freedMB > 0
-      ? Math.min(0.15, Math.log10(1 + freedMB / 10) * 0.1)
+    
+    // Tăng kích thước: đảm bảo luôn có base tăng 5% (0.05) để dễ nhận thấy
+    const growth = freedKB > 0
+      ? 0.05 + Math.min(0.2, Math.log10(1 + freedKB) * 0.04)
       : 0
 
-    setPigScale(prev => Math.min(prev + growth, 2.5))
-    setTotalEaten(prev => prev + (freedKB || 0))
+    setPigScale(prev => {
+      const next = prev + (isNaN(growth) ? 0 : growth)
+      return isNaN(next) ? 1.0 : Math.min(next, 2.5)
+    })
+    setTotalEaten(prev => prev + (isNaN(freedKB) ? 0 : freedKB))
+
+    const sizeStr = freedKB < 1024 
+      ? `+${freedKB.toFixed(0)}KB` 
+      : `+${(freedKB / 1024).toFixed(1)}MB`
+      
+    forceBubble(`${sizeStr}! Ngon quá!`)
 
     setTimeout(() => {
       setMode('full')
       showBubble(FULL_QUOTES)
       setTimeout(() => setMode('idle'), 4000)
-    }, 2000)
+    }, 5000)
+  }, [])
+  function forceBubble(text) {
+    setBubble(text)
+    setTimeout(() => setBubble(null), 4000)
   }
 
-  return { mode, bubble, pigScale, totalEaten, triggerEat, setMode }
+  return { mode, bubble, pigScale, totalEaten, cameraFollowsPig, reloadSettings, triggerEat, setMode, forceBubble }
 }
 

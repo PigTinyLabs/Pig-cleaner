@@ -14,6 +14,13 @@ const DEFAULTS = {
   autoCleanCategories: ['trash', 'temp', 'npm', 'yarn'],
   // Which categories to include when user manually triggers "clean all"
   manualCleanCategories: ['trash', 'system', 'temp', 'npm', 'yarn', 'brew'],
+  // Persistent pig state
+  pigScale: 1.0,
+  totalEaten: 0,
+  // Display mode: 'always-on-top' or 'desktop'
+  displayMode: 'always-on-top',
+  // Camera follows pig to the sky
+  cameraFollowsPig: true,
 }
 
 function load() {
@@ -28,7 +35,9 @@ function load() {
 
 function save(settings) {
   try {
-    fs.writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2), 'utf8')
+    const current = load()
+    const merged = { ...current, ...settings }
+    fs.writeFileSync(SETTINGS_PATH, JSON.stringify(merged, null, 2), 'utf8')
   } catch { /* ignore */ }
 }
 
