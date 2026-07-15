@@ -119,7 +119,13 @@
     "loading": "đang tải...",
     "enterCity": "Nhập tên thành phố...",
     "search": "Tìm",
-    "useAutoLocation": "Dùng lại vị trí tự động (theo IP)"
+    "useAutoLocation": "Dùng lại vị trí tự động (theo IP)",
+    "sound": "Âm thanh",
+    "soundEnabled": "Bật tiếng kêu khi dọn rác",
+    "petType": "Loại thú cưng",
+    "pig": "Heo",
+    "duck": "Vịt",
+    "stormMode": "Giả lập sấm sét"
   },
   "statsPanel": {
     "title": "Heo Thống Kê",

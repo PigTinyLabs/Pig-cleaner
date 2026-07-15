@@ -119,7 +119,13 @@
     "loading": "loading...",
     "enterCity": "Enter city name...",
     "search": "Search",
-    "useAutoLocation": "Use automatic location (IP)"
+    "useAutoLocation": "Use automatic location (IP)",
+    "sound": "Sound",
+    "soundEnabled": "Enable sound when cleaning",
+    "petType": "Pet Type",
+    "pig": "Pig",
+    "duck": "Duck",
+    "stormMode": "Thunderstorm Mode"
   },
   "statsPanel": {
     "title": "Piggy Stats",

@@ -52,7 +52,7 @@ function App() {
   const [permissionWarning, setPermissionWarning] = useState(false)
   const [isCleaning, setIsCleaning] = useState(false)
   const [isSuspended, setIsSuspended] = useState(false)
-  const [weatherSettings, setWeatherSettings] = useState({ weatherEffects: true, weatherAlerts: true, floodMode: false, snowMode: false, stormMode: false, petType: 'pig' })
+  const [weatherSettings, setWeatherSettings] = useState({ weatherEffects: true, weatherAlerts: true, floodMode: false, snowMode: false, stormMode: false, petType: 'pig', soundEnabled: false })
 
   const { mode, bubble, pigScale, totalEaten, cameraFollowsPig, reloadSettings, triggerEat, setMode, forceBubble } = usePigState(trashInfo, weatherSettings.petType)
   const isPanelOpen = showStats || showCache || showSettings || permissionWarning
@@ -70,6 +70,7 @@ function App() {
           snowMode: s.snowMode === true,
           stormMode: s.stormMode === true,
           petType: s.petType || 'pig',
+          soundEnabled: s.soundEnabled === true,
         })
         if (s.language) {
           i18n.changeLanguage(s.language)
@@ -90,6 +91,7 @@ function App() {
           snowMode: s.snowMode === true,
           stormMode: s.stormMode === true,
           petType: s.petType || 'pig',
+          soundEnabled: s.soundEnabled === true,
         })
         if (s.language && s.language !== i18n.language) {
           i18n.changeLanguage(s.language)
@@ -291,13 +293,15 @@ function App() {
     if (isCleaning) return
     setIsCleaning(true)
 
-    // Play sound based on petType
-    try {
-      const soundSrc = weatherSettings.petType === 'duck' ? quackSound : oinkSound
-      const audio = new Audio(soundSrc)
-      audio.play().catch(e => console.log('Audio play failed:', e))
-    } catch (e) {
-      console.log('Audio error:', e)
+    // Play sound based on petType if enabled
+    if (weatherSettings.soundEnabled) {
+      try {
+        const soundSrc = weatherSettings.petType === 'duck' ? quackSound : oinkSound
+        const audio = new Audio(soundSrc)
+        audio.play().catch(e => console.log('Audio play failed:', e))
+      } catch (e) {
+        console.log('Audio error:', e)
+      }
     }
     
     if (isElectron) {
