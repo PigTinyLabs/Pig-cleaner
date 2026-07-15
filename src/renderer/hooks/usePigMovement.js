@@ -136,7 +136,7 @@ export function usePigMovement(mode, isPanelOpen = false, windRef = null, pigSca
         swimPhaseRef.current = 0 // Quên cách bơi khi cạn nước
       }
 
-      currentFloorRef.current = swimActionRef.current === 'bottom' || swimActionRef.current === 'diving' ? 0 : floatingY
+      currentFloorRef.current = !isInWater || swimActionRef.current === 'bottom' || swimActionRef.current === 'diving' ? 0 : floatingY
       
       if (state.isDragging) {
         // Nếu đang kéo thả, không chạy vật lý
