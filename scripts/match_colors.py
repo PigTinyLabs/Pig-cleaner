@@ -50,13 +50,11 @@ def match_image(img_path):
     
     cv2.imwrite(img_path, out)
 
-folders = [
-    'src/renderer/assets/sprites/dive_frames',
-    'src/renderer/assets/sprites/drowning_frames'
-]
+prefixes = ['dive_', 'drown', 'struggle']
+folder = 'src/renderer/assets/sprites'
 
-for folder in folders:
-    for path in glob.glob(f'{folder}/*.png'):
+for prefix in prefixes:
+    for path in glob.glob(f'{folder}/{prefix}*.png'):
         print(f"Matching {path}...")
         match_image(path)
 
