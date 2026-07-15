@@ -799,6 +799,33 @@ body,
 .spark.s5 { left: 30%; animation-delay: 0.15s; }
 .spark.s6 { left: 70%; animation-delay: 0.2s; }
 
+/* ─── Freezing & Shivering Effects ────────────────────────────────────────── */
+@keyframes pigShiver {
+  0% { transform: translateX(-2px) translateY(1px); }
+  100% { transform: translateX(2px) translateY(-1px); }
+}
+
+.pig-shivering .pig-sprite {
+  animation: pigShiver 0.1s infinite alternate;
+}
+
+.cold-breath-puff {
+  position: absolute;
+  width: 15px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  filter: blur(2px);
+  animation: breathFloat 2.5s ease-out forwards;
+}
+
+@keyframes breathFloat {
+  0% { transform: scale(0.5) translate(0, 0); opacity: 0; }
+  20% { opacity: 0.8; }
+  100% { transform: scale(2.5) translate(20px, -20px); opacity: 0; }
+}
+
+
 @keyframes sparkFly {
   0% { transform: translateY(0) scaleY(1); opacity: 1; }
   100% { transform: translateY(-120px) scaleY(0.3); opacity: 0; }
