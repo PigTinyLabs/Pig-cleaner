@@ -265,7 +265,7 @@ function App() {
         const totalCacheBytes = currentCache.reduce((sum, c) => sum + c.sizeBytes, 0)
         const totalBytes = currentTrash.sizeBytes + totalCacheBytes
         
-        if (totalBytes === 0) {
+        if (totalBytes === 0 && currentTrash.fileCount === 0 && totalCacheBytes === 0) {
           forceBubble('Trắng bóc rồi! Không có gì để dọn ✨')
           setTimeout(() => {
             setMode('idle')
@@ -309,12 +309,14 @@ function App() {
 
         if (result.freedBytes > 0) {
           triggerEat(result.freedBytes / 1024) // convert to KB
-          const newInfo = await window.pigAPI.getTrashInfo()
-          setTrashInfo(newInfo)
-          const remaining = result.trash?.remainingBytes || 0
-          if (remaining > 0) {
-            forceBubble(`Còn ${newInfo.sizeFormatted} chưa dọn được, có file đang mở à? 🤔`)
-          }
+        }
+        
+        const newInfo = await window.pigAPI.getTrashInfo()
+        setTrashInfo(newInfo)
+        
+        const remaining = result.trash?.remainingBytes || 0
+        if (result.freedBytes > 0 && remaining > 0) {
+          forceBubble(`Còn ${newInfo.sizeFormatted} chưa dọn được, có file đang mở à? 🤔`)
         } else {
           forceBubble('Đã dọn xong!')
           setTimeout(() => setMode('idle'), 1500)
