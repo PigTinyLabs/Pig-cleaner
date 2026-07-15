@@ -110,6 +110,17 @@ function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weather.condition, weather.upcomingCondition, weatherSettings.weatherAlerts])
 
+  // Heo than lạnh thường xuyên hơn khi nhiệt độ <= 0
+  useEffect(() => {
+    if (!weatherSettings.weatherAlerts || weather.temperature === null || weather.temperature > 0) return
+    const messages = ['🥶 Lạnh quá đi mất!', '🧊 Cứu tôi, đông đá luôn rồi!', '❄️ Lạnh buốt giá luôn!', '🥶 Da đổi màu xanh rồi nè!']
+    const interval = setInterval(() => {
+      const randomMsg = messages[Math.floor(Math.random() * messages.length)]
+      forceBubble(randomMsg)
+    }, 20000) // 20 giây than 1 lần
+    return () => clearInterval(interval)
+  }, [weather.temperature, weatherSettings.weatherAlerts, forceBubble])
+
   // Lắng nghe sự kiện sét đánh từ WeatherEffects
   useEffect(() => {
     if (!weatherSettings.weatherAlerts) return

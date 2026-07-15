@@ -1,25 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react'
 
 const GRASS_TYPES = ['🌱', '🌿', '☘️', '🍀']
+const SNOW_TYPES = ['❄️', '❄️', '❄️']
 
-export default function GrassTrail({ x, y, isWalking }) {
+export default function GrassTrail({ x, y, isWalking, trailType = 'grass' }) {
   const [grasses, setGrasses] = useState([])
   const lastSpawnXRef = useRef(x)
 
   useEffect(() => {
-    // Chỉ mọc cỏ khi lợn đang đi bộ và ở dưới đất
+    // Chỉ mọc cỏ/tuyết khi lợn đang đi bộ và ở dưới đất
     if (!isWalking || y < 0) return
 
-    // Khoảng cách giữa các khóm cỏ
+    // Khoảng cách giữa các khóm
     const SPAWN_DISTANCE = 35
 
     if (Math.abs(x - lastSpawnXRef.current) > SPAWN_DISTANCE) {
       lastSpawnXRef.current = x
       
+      const types = trailType === 'snow' ? SNOW_TYPES : GRASS_TYPES
       const newGrass = {
         id: Date.now() + Math.random(),
         x: x + 60, // Căn giữa khoảng x (chiều rộng lợn ~150px)
-        type: GRASS_TYPES[Math.floor(Math.random() * GRASS_TYPES.length)],
+        type: types[Math.floor(Math.random() * types.length)],
         size: Math.random() > 0.5 ? '20px' : '24px',
         // Hơi lộn xộn một chút về y
         offsetY: Math.floor(Math.random() * 5),
