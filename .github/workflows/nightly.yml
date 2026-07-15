@@ -36,7 +36,7 @@ jobs:
         shell: bash
         run: |
           openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=Developer ID Application: Pig Cleaner (Self-Signed)"
-          openssl pkcs12 -export -out cert.p12 -inkey key.pem -in cert.pem -password pass:dummy
+          openssl pkcs12 -export -legacy -out cert.p12 -inkey key.pem -in cert.pem -password pass:dummy
           echo "CSC_LINK=cert.p12" >> $GITHUB_ENV
           echo "CSC_KEY_PASSWORD=dummy" >> $GITHUB_ENV
 
