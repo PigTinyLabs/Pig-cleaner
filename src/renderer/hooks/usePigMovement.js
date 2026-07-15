@@ -208,18 +208,21 @@ export function usePigMovement(mode, isPanelOpen = false, windRef = null, pigSca
         const forceX = wx.windForceX || 0 // -1..+1
         const mass = pigScaleRef.current   // heo to = nặng = ít bị gió
 
-        if (windSpeed > 0 && state.y === 0) {
-          // Lực gió ngang khi đứng trên đất
-          // windForceX > 0 = gió thổi sang phải
+        if (windSpeed > 0) {
           const windAccel = (forceX * windSpeed * 0.005) / mass
 
-          // Heo gầy (scale < 1.1) bị gió trôi kể cả khi đứng im
-          const isThin = pigScaleRef.current < 1.1
-          if (windSpeed > 30 && isThin) {
-            state.vx += windAccel * 1.5
-          } else if (Math.abs(state.vx) > 0.3) {
-            // Heo đang di chuyển → tăng tốc hoặc giảm tốc theo hướng gió
-            state.vx += windAccel * 0.6
+          if (state.y === 0) {
+            // Lực gió ngang khi đứng trên đất
+            const isThin = pigScaleRef.current < 1.1
+            if (windSpeed >= 25 && isThin) {
+              state.vx += windAccel * 1.5
+            } else if (Math.abs(state.vx) > 0.3) {
+              // Heo đang di chuyển → tăng tốc hoặc giảm tốc theo hướng gió
+              state.vx += windAccel * 0.6
+            }
+          } else if (state.y < 0 && windSpeed >= 25) {
+            // Khi bay trên không (bị quăng lên) và gió từ 25 trở lên, heo bị thổi mạnh hơn nhiều
+            state.vx += windAccel * 4
           }
         }
 
