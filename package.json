@@ -43,7 +43,6 @@
       }
     ],
     "mac": {
-      "identity": "-",
       "target": [
         {
           "target": "dmg",
