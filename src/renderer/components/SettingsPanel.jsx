@@ -24,6 +24,7 @@ export default function SettingsPanel({ onClose }) {
     floodMode: false,
     snowMode: false,
     stormMode: false,
+    soundEnabled: false,
     language: i18n.language || 'en',
   })
   const [categories, setCategories] = useState([])
@@ -151,6 +152,18 @@ export default function SettingsPanel({ onClose }) {
               <option value="pig">{t('settingsPanel.pig', 'Heo (Pig)')}</option>
               <option value="duck">{t('settingsPanel.duck', 'Vịt (Duck)')}</option>
             </select>
+          </div>
+
+          <div className="settings-section">
+            <div className="settings-section-title">🔊 {t('settingsPanel.sound', 'Âm thanh (Sound)')}</div>
+            <label className="cache-item">
+              <input
+                type="checkbox"
+                checked={settings.soundEnabled === true}
+                onChange={e => setSettings(prev => ({ ...prev, soundEnabled: e.target.checked }))}
+              />
+              <span className="cache-item-label">{t('settingsPanel.soundEnabled', 'Bật tiếng kêu khi dọn rác (Enable sound on clean)')}</span>
+            </label>
           </div>
 
           <div className="settings-section">
