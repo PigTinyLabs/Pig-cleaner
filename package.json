@@ -37,6 +37,7 @@
     "files": [
       "dist/renderer/**/*",
       "src/main/**/*",
+      "src/locales/**/*",
       "package.json"
     ],
     "extraResources": [
