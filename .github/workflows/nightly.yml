@@ -25,12 +25,6 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Set Build Version
-        shell: bash
-        run: |
-          CURRENT_VERSION=$(node -p "require('./package.json').version")
-          npm --no-git-tag-version version $CURRENT_VERSION-nightly.${{ github.run_number }}
-
       - name: Generate Self-Signed Certificate (macOS)
         if: matrix.os == 'macos-latest'
         shell: bash
@@ -69,40 +63,35 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: Delete old release assets
-        uses: mknejp/delete-release-assets@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: nightly
-          assets: '*'
-          fail-if-no-assets: false
-          fail-if-no-release: false
-
-      - name: Update Nightly Tag
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git tag -f nightly
-          git push -f origin nightly
-
       - name: Publish Nightly Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: nightly
-          name: "🐷 Bản thử nghiệm mới nhất (Nightly)"
+          tag_name: nightly_v${{ github.run_number }}
+          name: "🐷 Bản thử nghiệm mới nhất (Nightly v${{ github.run_number }})"
           body: |
             Bản build tự động mới nhất từ nhánh `master`.
+
+            <details>
+            <summary>🍏 <b>Dành cho macOS (Chip M1/M2/M3 và Intel)</b></summary>
             
             ⚠️ **Hướng dẫn cài đặt trên macOS (Quan trọng):**
             Vì ứng dụng là dự án mã nguồn mở (không có chứng chỉ trả phí của Apple), macOS có thể sẽ báo lỗi *"App is damaged and can't be opened"* khi bạn mở lần đầu. Để khắc phục, vui lòng làm theo các bước sau:
             
-            1. Kéo thả `pig-cleaner.app` vào thư mục **Applications** (Ứng dụng).
-            2. Mở ứng dụng **Terminal** trên máy Mac.
-            3. Chạy dòng lệnh sau và ấn Enter:
+            1. Tải file `.dmg` phù hợp với máy của bạn.
+            2. Kéo thả `pig-cleaner.app` vào thư mục **Applications** (Ứng dụng).
+            3. Mở ứng dụng **Terminal** trên máy Mac.
+            4. Chạy dòng lệnh sau và ấn Enter:
                ```bash
                xattr -cr /Applications/pig-cleaner.app
                ```
-            4. Mở ứng dụng và trải nghiệm bình thường!
+            5. Mở ứng dụng và trải nghiệm bình thường!
+            </details>
+
+            <details>
+            <summary>🪟 <b>Dành cho Windows</b></summary>
+            
+            - Tải file `.exe` ở dưới và cài đặt bình thường.
+            </details>
             
             📝 **Dành cho Lập trình viên:**
             Nếu bạn muốn tự custom, chỉnh sửa code và tự đóng gói (build) ứng dụng cho riêng mình, hãy xem hướng dẫn chi tiết tại [Trang chủ dự án (README)](https://github.com/tinyspirits/Pig-cleaner).
