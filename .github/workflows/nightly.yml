@@ -26,6 +26,8 @@ jobs:
 
       - name: Build Application
         run: npm run build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Delete old release assets
         uses: mknejp/delete-release-assets@v1
