@@ -24,26 +24,27 @@ import sleep4 from '../assets/sprites/sleep4.png'
 import drag1 from '../assets/sprites/drag1.png'
 import drag2 from '../assets/sprites/drag2.png'
 import drag3 from '../assets/sprites/drag3.png'
-// Dive frames (kỹ năng lặn sau khi tỉnh) — theo mapping của all_pigs:
-// 11-15 = bơi dưới đáy nước, 18-20 = lặn xuống, 21 = ngoi lên, 22 = nổi lơ lửng
-import diveBottom0 from '../assets/sprites/dive_frames/pig_11.png'
-import diveBottom1 from '../assets/sprites/dive_frames/pig_12.png'
-import diveBottom2 from '../assets/sprites/dive_frames/pig_13.png'
-import diveBottom3 from '../assets/sprites/dive_frames/pig_14.png'
-import diveBottom4 from '../assets/sprites/dive_frames/pig_15.png'
-import diveDown0 from '../assets/sprites/dive_frames/pig_18.png'
-import diveDown1 from '../assets/sprites/dive_frames/pig_19.png'
-import diveDown2 from '../assets/sprites/dive_frames/pig_20.png'
-import diveUp from '../assets/sprites/dive_frames/pig_21.png'
-import diveFloat from '../assets/sprites/dive_frames/pig_22.png'
-import drown0 from '../assets/sprites/drowning_frames/pig_15.png'
-import drown1 from '../assets/sprites/drowning_frames/pig_16.png'
-import drown2 from '../assets/sprites/drowning_frames/pig_17.png'
-import drown3 from '../assets/sprites/drowning_frames/pig_18.png'
-import drown4 from '../assets/sprites/drowning_frames/pig_19.png'
-import struggle1 from '../assets/sprites/drowning_frames/pig_11.png'
-import struggle2 from '../assets/sprites/drowning_frames/pig_12.png'
-import struggle3 from '../assets/sprites/drowning_frames/pig_13.png'
+// Dive frames (kỹ năng lặn sau khi tỉnh)
+import diveBottom1 from '../assets/sprites/dive_bottom1.png'
+import diveBottom2 from '../assets/sprites/dive_bottom2.png'
+import diveBottom3 from '../assets/sprites/dive_bottom3.png'
+import diveBottom4 from '../assets/sprites/dive_bottom4.png'
+import diveBottom5 from '../assets/sprites/dive_bottom5.png'
+import diveDown1 from '../assets/sprites/dive_down1.png'
+import diveDown2 from '../assets/sprites/dive_down2.png'
+import diveDown3 from '../assets/sprites/dive_down3.png'
+import diveUp from '../assets/sprites/dive_up.png'
+import diveFloat from '../assets/sprites/dive_float.png'
+
+// Drowning frames
+import drown1 from '../assets/sprites/drown1.png'
+import drown2 from '../assets/sprites/drown2.png'
+import drown3 from '../assets/sprites/drown3.png'
+import drown4 from '../assets/sprites/drown4.png'
+import drown5 from '../assets/sprites/drown5.png'
+import struggle1 from '../assets/sprites/struggle1.png'
+import struggle2 from '../assets/sprites/struggle2.png'
+import struggle3 from '../assets/sprites/struggle3.png'
 
 // ─── Animation configs ────────────────────────────────────────────────────────
 // fps: frames per second, frames: array of images, loop: boolean
@@ -59,10 +60,10 @@ const ANIMATIONS = {
   drag_falling: { frames: [drag2], fps: 1, loop: false },
   drag_landed: { frames: [drag3], fps: 1, loop: false },
   diving_float: { frames: [diveFloat], fps: 1, loop: true }, // Nổi lơ lửng, không di chuyển
-  diving_down: { frames: [diveDown0, diveDown1, diveDown2], fps: 6, loop: true }, // Đang lặn xuống
+  diving_down: { frames: [diveDown1, diveDown2, diveDown3], fps: 6, loop: true }, // Đang lặn xuống
   diving_up: { frames: [diveUp], fps: 1, loop: true }, // Đang ngoi lên
-  diving_bottom: { frames: [diveBottom0, diveBottom1, diveBottom2, diveBottom3, diveBottom4], fps: 6, loop: true }, // Bơi dưới đáy nước
-  drowning: { frames: [drown0, drown1, drown2, drown3, drown4], fps: 6, loop: true },
+  diving_bottom: { frames: [diveBottom1, diveBottom2, diveBottom3, diveBottom4, diveBottom5], fps: 6, loop: true }, // Bơi dưới đáy nước
+  drowning: { frames: [drown1, drown2, drown3, drown4, drown5], fps: 6, loop: true },
   drowning_sink: { frames: [struggle2], fps: 1, loop: false },
   drowning_bottom: { frames: [sleep1, sleep2, sleep3, sleep4], fps: 1.5, loop: true },
   struggling: { frames: [struggle1, struggle2, struggle3], fps: 6, loop: true },
