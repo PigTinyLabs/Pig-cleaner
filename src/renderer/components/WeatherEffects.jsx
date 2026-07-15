@@ -181,6 +181,23 @@ function LightningFlash() {
 // ─── WeatherEffects (main export) ────────────────────────────────────────────
 export default function WeatherEffects({ weather }) {
   const containerRef = useRef(null)
+  const [waterLevel, setWaterLevel] = useState(0)
+
+  useEffect(() => {
+    const isHeavyRain = weather?.condition === 'thunderstorm'
+    const interval = setInterval(() => {
+      setWaterLevel(prev => {
+        if (isHeavyRain) {
+          // Ngập dần, max 100%
+          return Math.min(100, prev + 1.5)
+        } else {
+          // Rút dần
+          return Math.max(0, prev - 3)
+        }
+      })
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [weather?.condition])
 
   useEffect(() => {
     const handler = (e) => {
@@ -189,15 +206,15 @@ export default function WeatherEffects({ weather }) {
       const { isFlying, vy } = e.detail || {}
       let rate = 1
       if (isFlying && typeof vy === 'number') {
-        // vy < 0 means pig moving UP -> camera moving UP -> rain falls FASTER -> rate > 1
-        // vy > 0 means pig moving DOWN -> camera moving DOWN -> rain falls SLOWER -> rate < 1
-        // vy = 0 means stationary -> rate = 1
-        // Adjust the divisor (15) to tune the sensitivity.
         rate = Math.max(0.05, Math.min(5.0, 1 - vy / 15))
       }
 
       const anims = containerRef.current.getAnimations({ subtree: true })
       for (const anim of anims) {
+        if (anim.animationName && anim.animationName.includes('wind-streak')) {
+          if (Math.abs(anim.playbackRate - 1) > 0.05) anim.playbackRate = 1
+          continue
+        }
         if (Math.abs(anim.playbackRate - rate) > 0.05) {
           anim.playbackRate = rate
         }
@@ -207,19 +224,32 @@ export default function WeatherEffects({ weather }) {
     return () => window.removeEventListener('pig-flying', handler)
   }, [])
 
-  if (!weather) return null
+  if (!weather && waterLevel <= 0) return null
 
-  const { condition, windForceX, windSpeed, isStorm } = weather
+  const { condition, windForceX, windSpeed, isStorm } = weather || {}
   const showRain = condition === 'rain' || condition === 'drizzle' || condition === 'thunderstorm'
   const showSnow = condition === 'snow'
   const showWind = windSpeed > 25
   const showLightning = condition === 'thunderstorm'
   const rainIntensity = condition === 'drizzle' ? 0.4 : condition === 'thunderstorm' ? 1.5 : 1.0
 
-  if (!showRain && !showSnow && !showWind && !showLightning) return null
+  if (!showRain && !showSnow && !showWind && !showLightning && waterLevel <= 0) return null
 
   return (
     <div ref={containerRef} style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 50 }}>
+      {waterLevel > 0 && (
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: `${waterLevel}vh`,
+          backgroundColor: '#0ea5e9',
+          opacity: 0.3,
+          transition: 'height 1s linear',
+          zIndex: 10
+        }} />
+      )}
       {showRain && <RainLayer windForceX={windForceX} intensity={Math.min(rainIntensity, 1)} />}
       {showSnow && <SnowLayer windForceX={windForceX} />}
       {showWind && <WindStreaks windForceX={windForceX} windSpeed={windSpeed} />}
