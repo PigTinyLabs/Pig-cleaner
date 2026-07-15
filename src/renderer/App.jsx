@@ -49,7 +49,7 @@ function App() {
   const [permissionWarning, setPermissionWarning] = useState(false)
   const [isCleaning, setIsCleaning] = useState(false)
   const [isSuspended, setIsSuspended] = useState(false)
-  const [weatherSettings, setWeatherSettings] = useState({ weatherEffects: true, weatherAlerts: true, floodMode: false })
+  const [weatherSettings, setWeatherSettings] = useState({ weatherEffects: true, weatherAlerts: true, floodMode: false, snowMode: false })
 
   const { mode, bubble, pigScale, totalEaten, cameraFollowsPig, reloadSettings, triggerEat, setMode, forceBubble } = usePigState(trashInfo)
   const isPanelOpen = showStats || showCache || showSettings || permissionWarning
@@ -63,6 +63,7 @@ function App() {
           weatherEffects: s.weatherEffects !== false,
           weatherAlerts: s.weatherAlerts !== false,
           floodMode: s.floodMode === true,
+          snowMode: s.snowMode === true,
         })
       })
     }
@@ -77,6 +78,7 @@ function App() {
           weatherEffects: s.weatherEffects !== false,
           weatherAlerts: s.weatherAlerts !== false,
           floodMode: s.floodMode === true,
+          snowMode: s.snowMode === true,
         })
       })
     }
@@ -361,7 +363,7 @@ function App() {
   return (
     <div className={`pig-wrapper ${isEarthquake ? 'earthquake' : ''}`}>
       {/* Weather visual effects (respects settings toggle) */}
-      {(weatherSettings.weatherEffects || weatherSettings.floodMode) && <WeatherEffects weather={weather} floodMode={weatherSettings.floodMode} effectsEnabled={weatherSettings.weatherEffects} />}
+      {(weatherSettings.weatherEffects || weatherSettings.floodMode || weatherSettings.snowMode) && <WeatherEffects weather={weather} floodMode={weatherSettings.floodMode} snowMode={weatherSettings.snowMode} effectsEnabled={weatherSettings.weatherEffects} />}
       {/* Stats Panel */}
       {showStats && (
         <StatsPanel
@@ -411,6 +413,7 @@ function App() {
         onWakeUp={() => setMode('idle')}
         weatherData={weatherSettings.weatherAlerts ? weather : null}
         floodMode={weatherSettings.floodMode}
+        snowMode={weatherSettings.snowMode}
       />
     </div>
   )

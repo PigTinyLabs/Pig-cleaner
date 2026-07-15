@@ -19,6 +19,8 @@ export default function SettingsPanel({ onClose }) {
     weatherEffects: true,
     weatherAlerts: true,
     weatherLocation: null,
+    floodMode: false,
+    snowMode: false,
   })
   const [categories, setCategories] = useState([])
   const [saving, setSaving] = useState(false)
@@ -235,6 +237,14 @@ export default function SettingsPanel({ onClose }) {
                 onChange={e => setSettings(prev => ({ ...prev, floodMode: e.target.checked }))}
               />
               <span className="cache-item-label">Bật chế độ lũ lụt (Nước ngập)</span>
+            </label>
+            <label className="cache-item">
+              <input
+                type="checkbox"
+                checked={settings.snowMode === true}
+                onChange={e => setSettings(prev => ({ ...prev, snowMode: e.target.checked }))}
+              />
+              <span className="cache-item-label">Giả lập tuyết rơi (Phủ tuyết màn hình)</span>
             </label>
             <label className="cache-item">
               <input
