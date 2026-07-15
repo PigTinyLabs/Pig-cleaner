@@ -95,6 +95,31 @@ function useSprite(mode) {
   return config.frames[frameIdx] ?? config.frames[0]
 }
 
+// ─── ColdBreath hook & component ────────────────────────────────────────────────
+function ColdBreath() {
+  const [breaths, setBreaths] = useState([])
+
+  useEffect(() => {
+    let timer
+    const spawn = () => {
+      const id = Date.now() + Math.random()
+      setBreaths(prev => [...prev, id])
+      setTimeout(() => setBreaths(prev => prev.filter(b => b !== id)), 2500)
+      timer = setTimeout(spawn, 2500 + Math.random() * 2000)
+    }
+    timer = setTimeout(spawn, 1000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  return (
+    <div style={{ position: 'absolute', right: '35px', top: '50px', pointerEvents: 'none' }}>
+      {breaths.map(id => (
+        <div key={id} className="cold-breath-puff" />
+      ))}
+    </div>
+  )
+}
+
 // ─── PigPet ───────────────────────────────────────────────────────────────────
 
 export const PIG_WIDTH = 150
@@ -238,7 +263,7 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
   // Áp dụng filter thiên thạch đè lên nếu đang rơi hoặc đang bị cháy đen
   let meteoriteRedness = 0;
   if (isCharred) {
-    // Cháy đen thui còn 2 con mắt trắng (invert làm mắt đen thành trắng, phần màu hồng thành xanh xám. Grayscale và contrast(5) ép xanh xám thành đen kịt, mắt trắng sáng)
+    // Cháy đen thui còn 2 con mắt trắng
     meteoriteRedness = 1
     imageFilter = `invert(1) grayscale(1) contrast(5) brightness(0.6) drop-shadow(0 0 4px rgba(0,0,0,1))`
   } else if (meteoriteHeat > 0) {
@@ -247,11 +272,14 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
       const p = meteoriteHeat / 0.4
       imageFilter = `sepia(${p}) hue-rotate(-10deg) saturate(${1 + p*2}) brightness(${1 + p*0.3}) drop-shadow(0 0 10px rgba(255,200,0,${p}))`
     } else {
-      // Bốc cháy đỏ rực (khi heat từ 0.4 -> 0.7)
+      // Bốc cháy đỏ rực
       const p = (meteoriteHeat - 0.4) / 0.3
       meteoriteRedness = p
       imageFilter = `sepia(1) hue-rotate(${-10 - 30 * p}deg) saturate(${3 + p}) brightness(${1.3 - p*0.3}) drop-shadow(0 0 15px rgba(255,80,0,1))`
     }
+  } else if (temp !== null && temp <= 0) {
+    // Da đổi màu xanh lạnh (cold skin) khi nhiệt độ <= 0
+    imageFilter = `drop-shadow(0 0 15px rgba(150, 220, 255, 0.6)) hue-rotate(-90deg) saturate(1.2) brightness(1.1) contrast(1.1)`
   }
   
   if (paleLevel > 0 && !isCharred && meteoriteHeat === 0) {
@@ -295,12 +323,14 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
     return () => window.removeEventListener('water-splash', handleSplash)
   }, [])
 
+  const isShivering = temp !== null && temp <= 10;
+
   return (
     <>
       <SkyClouds altitude={altitude} />
-      <GrassTrail x={position.x} y={position.y} isWalking={mode === 'walking'} />
+      <GrassTrail x={position.x} y={position.y} isWalking={mode === 'walking'} trailType={temp !== null && temp < 0 ? 'snow' : 'grass'} />
       <div
-      className={`pig-container pig-${displayMode} ${isWallHit ? 'pig-hit-wall' : ''} ${isFallingFast ? 'pig-meteorite' : ''}`}
+      className={`pig-container pig-${displayMode} ${isWallHit ? 'pig-hit-wall' : ''} ${isFallingFast ? 'pig-meteorite' : ''} ${isShivering ? 'pig-shivering' : ''}`}
       style={containerStyle}
       onMouseUp={handleDragEnd}
     >
@@ -402,8 +432,10 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
         transition: 'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)', // Hiệu ứng nẩy khi dừng đột ngột
         transformOrigin: 'bottom center',
         display: 'flex',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        position: 'relative'
       }}>
+        {temp !== null && temp <= 0 && !isDragging && <ColdBreath />}
         <img
             src={currentSprite}
             alt="pig pet"
