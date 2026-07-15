@@ -36,6 +36,12 @@
       "src/main/**/*",
       "package.json"
     ],
+    "extraResources": [
+      {
+        "from": "src/renderer/assets/tray-icon.png",
+        "to": "assets/tray-icon.png"
+      }
+    ],
     "mac": {
       "identity": null,
       "target": [
