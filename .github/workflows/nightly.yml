@@ -25,14 +25,20 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Generate Self-Signed Certificate (macOS)
+      - name: Setup Apple Certificate (macOS)
         if: matrix.os == 'macos-latest'
         shell: bash
+        env:
+          MAC_CERTS: ${{ secrets.MAC_CERTS }}
+          MAC_CERTS_PASSWORD: ${{ secrets.MAC_CERTS_PASSWORD }}
         run: |
-          openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=Developer ID Application: Pig Cleaner (Self-Signed)"
-          openssl pkcs12 -export -legacy -out cert.p12 -inkey key.pem -in cert.pem -password pass:dummy
-          echo "CSC_LINK=cert.p12" >> $GITHUB_ENV
-          echo "CSC_KEY_PASSWORD=dummy" >> $GITHUB_ENV
+          if [ -n "$MAC_CERTS" ]; then
+            echo "$MAC_CERTS" | base64 --decode > cert.p12
+            echo "CSC_LINK=cert.p12" >> $GITHUB_ENV
+            echo "CSC_KEY_PASSWORD=$MAC_CERTS_PASSWORD" >> $GITHUB_ENV
+          else
+            echo "No MAC_CERTS found, skipping code signing."
+          fi
 
       - name: Build Application
         run: npm run build
