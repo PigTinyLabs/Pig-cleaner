@@ -127,7 +127,7 @@ export const PIG_HEIGHT = 150
 
 const isElectron = typeof window !== 'undefined' && window.pigAPI
 
-export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = false, isCleaning = false, cameraFollowsPig, onDoubleClick, onWakeUp, weatherData = null, floodMode = false }) {
+export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = false, isCleaning = false, cameraFollowsPig, onDoubleClick, onWakeUp, weatherData = null, floodMode = false, snowMode = false }) {
   const windRef = useRef(null)
   
   const {
@@ -324,11 +324,18 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
   }, [])
 
   const isShivering = temp !== null && temp <= 10;
+  
+  let trailType = 'grass'
+  if (snowMode || conditionStr.includes('snow')) {
+    trailType = 'footprint'
+  } else if (temp !== null && temp < 0) {
+    trailType = 'snow'
+  }
 
   return (
     <>
       <SkyClouds altitude={altitude} />
-      <GrassTrail x={position.x} y={position.y} isWalking={mode === 'walking'} trailType={temp !== null && temp < 0 ? 'snow' : 'grass'} />
+      <GrassTrail x={position.x} y={position.y} isWalking={mode === 'walking'} trailType={trailType} />
       <div
       className={`pig-container pig-${displayMode} ${isWallHit ? 'pig-hit-wall' : ''} ${isFallingFast ? 'pig-meteorite' : ''} ${isShivering ? 'pig-shivering' : ''}`}
       style={containerStyle}
