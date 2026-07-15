@@ -63,6 +63,8 @@ const ANIMATIONS = {
   diving_up: { frames: [diveUp], fps: 1, loop: true }, // Đang ngoi lên
   diving_bottom: { frames: [diveBottom0, diveBottom1, diveBottom2, diveBottom3, diveBottom4], fps: 6, loop: true }, // Bơi dưới đáy nước
   drowning: { frames: [drown0, drown1, drown2, drown3, drown4], fps: 6, loop: true },
+  drowning_sink: { frames: [struggle2], fps: 1, loop: false },
+  drowning_bottom: { frames: [sleep1, sleep2, sleep3, sleep4], fps: 1.5, loop: true },
   struggling: { frames: [struggle1, struggle2, struggle3], fps: 6, loop: true },
 }
 
@@ -99,7 +101,7 @@ export const PIG_HEIGHT = 150
 
 const isElectron = typeof window !== 'undefined' && window.pigAPI
 
-export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = false, isCleaning = false, cameraFollowsPig, onDoubleClick, onWakeUp, weatherData = null }) {
+export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = false, isCleaning = false, cameraFollowsPig, onDoubleClick, onWakeUp, weatherData = null, floodMode = false }) {
   const windRef = useRef(null)
   
   const {
@@ -115,46 +117,47 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
     wasDragged,
     isWallHit,
     dragVelocity,
-    isStruggling,
-    isSinking,
-    isUnderwater,
-    isFloating
-  } = usePigMovement(mode, isPanelOpen, windRef, pigScale, weatherData)
+    swimAction,
+    isAboveWater,
+    paleLevel
+  } = usePigMovement(mode, isPanelOpen, windRef, pigScale, weatherData, floodMode)
 
   const handleClick = (e) => {
-    // Chỉ ngửi rác khi heo đang ở trên mặt đất (không rơi) và không bị kéo đi
-    if (!wasDragged() && !isDragging && position.y >= -10 && !isSinking && !isStruggling && !isFloating && !isUnderwater) {
-      onDoubleClick?.(e) // Call the same handler, but it's now a single click
+    // Cho phép ngửi/ăn rác nếu không bị kéo đi và (đang trên đất hoặc đang bơi)
+    if (!wasDragged() && !isDragging) {
+      if (position.y >= -10 || swimAction !== 'none') {
+        onDoubleClick?.(e) // Call the same handler, but it's now a single click
+      }
     }
   }
 
 
 
   let displayMode = mode
-  if (isStruggling) {
-    displayMode = 'struggling'
+  if (mode === 'eating') {
+    displayMode = 'eating'
   } else if (isDragging) {
     displayMode = dragState ? `drag_${dragState}` : 'drag_held'
-  } else if (isSinking) {
-    displayMode = position.y >= -5 ? 'sleeping' : 'drowning'
-  } else if (isUnderwater && !isDragging) {
-    // Heo đã có "kỹ năng lặn" — chọn đúng sub-animation theo hướng di chuyển
-    const vy = dragVelocity.y
-    if (position.y >= -5) {
-      displayMode = 'diving_bottom' // Đang bơi/nghỉ dưới đáy nước
-    } else if (vy > 2) {
-      displayMode = 'diving_down' // Đang chủ động lặn xuống
-    } else if (vy < -2) {
-      displayMode = 'diving_up' // Đang ngoi lên
-    } else {
-      displayMode = 'diving_float' // Nổi lơ lửng, không di chuyển nhiều
-    }
-  } else if (isFloating && !isDragging) {
-    // Nước đang dâng, heo CHƯA có kỹ năng lặn -> chỉ biết giãy giụa trên mặt nước
-    // (dùng chung animation với isStruggling, cùng bộ khung hình 11-13 drowning_frames)
-    displayMode = 'struggling'
-  } else if (position.y < -5) {
+  } else if (isAboveWater) {
     displayMode = 'drag_falling'
+  } else if (swimAction !== 'none') {
+    if (swimAction === 'struggling') {
+      displayMode = 'struggling'
+    } else if (swimAction === 'surface') {
+      displayMode = 'diving_float'
+    } else if (swimAction === 'diving') {
+      displayMode = 'diving_down'
+    } else if (swimAction === 'rising') {
+      displayMode = 'diving_up'
+    } else if (swimAction === 'bottom') {
+       if (Math.abs(dragVelocity.x) > 0.5 || Math.abs(dragVelocity.y) > 0.5) {
+          displayMode = 'diving_bottom'
+       } else {
+          displayMode = mode // idle or sniffing, etc.
+       }
+    } else if (swimAction === 'drowning_sink' || swimAction === 'drowning_bottom') {
+      displayMode = swimAction
+    }
   } else if (dragState === 'landed') {
     displayMode = 'drag_landed'
   } else if (mode === 'eating' || mode === 'sniffing' || mode === 'full' || mode === 'scared') {
@@ -249,6 +252,10 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
       imageFilter = `sepia(1) hue-rotate(${-10 - 30 * p}deg) saturate(${3 + p}) brightness(${1.3 - p*0.3}) drop-shadow(0 0 15px rgba(255,80,0,1))`
     }
   }
+  
+  if (paleLevel > 0 && !isCharred && meteoriteHeat === 0) {
+    imageFilter += ` saturate(${1 - paleLevel}) brightness(${1 + paleLevel * 0.4}) hue-rotate(${paleLevel * 180}deg)`
+  }
 
   const safeX = isNaN(position.x) ? 0 : position.x
   const safeY = isNaN(visualY) ? 0 : visualY
@@ -301,6 +308,15 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
         {meteoriteHeat >= 0.7 && (
           <div className="meteorite-fireball"></div>
         )}
+        {['diving', 'bottom', 'rising', 'drowning_sink', 'drowning_bottom'].includes(swimAction) && !isAboveWater && (
+          <div className="water-bubbles" style={swimAction === 'rising' ? { top: '30%', left: '50%' } : {}}>
+            <div className="water-bubble" style={{ left: '10px', animationDelay: '0s' }}></div>
+            <div className="water-bubble" style={{ left: '30px', animationDelay: '0.2s', width: '15px', height: '15px' }}></div>
+            <div className="water-bubble" style={{ left: '20px', animationDelay: '0.6s', width: '8px', height: '8px' }}></div>
+            <div className="water-bubble" style={{ left: '40px', animationDelay: '0.9s' }}></div>
+            <div className="water-bubble" style={{ left: '15px', animationDelay: '1.2s', width: '12px', height: '12px' }}></div>
+          </div>
+        )}
       {/* Speech Bubble */}
       {bubble && (
         <div className="speech-bubble">
@@ -331,7 +347,7 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
       )}
 
       {/* ZZZ khi ngủ */}
-      {mode === 'sleeping' && !isDragging && !dragState && (
+      {(displayMode === 'sleeping' || displayMode === 'drowning_bottom') && !isDragging && !dragState && (
         <div className="zzz-container">
           <div className="zzz z1">z</div>
           <div className="zzz z2">Z</div>
