@@ -14,6 +14,8 @@ export function usePigMovement(mode, isPanelOpen = false, windRef = null, pigSca
   const [isWallHit, setIsWallHit] = useState(false)
   const [isStruggling, setIsStruggling] = useState(false)
   const [isSinking, setIsSinking] = useState(false)
+  const [isUnderwater, setIsUnderwater] = useState(false) // Heo đã tỉnh lại dưới nước, có "kỹ năng lặn"
+  const [isFloating, setIsFloating] = useState(false) // Heo đang bơi/nổi trên mặt nước dâng
   
   const dragStateRef = useRef(null)
   const wallHitTimeoutRef = useRef(null)
@@ -24,6 +26,9 @@ export function usePigMovement(mode, isPanelOpen = false, windRef = null, pigSca
   const currentFloorRef = useRef(0)
   const drowningTimerRef = useRef(null)
   const isSinkingRef = useRef(false)
+  const wakeUpTimerRef = useRef(null)
+  const isUnderwaterRef = useRef(false)
+  const isFloatingRef = useRef(false)
   
   // Cập nhật refs mỗi khi props thay đổi
   useEffect(() => { pigScaleRef.current = pigScale }, [pigScale])
@@ -43,12 +48,23 @@ export function usePigMovement(mode, isPanelOpen = false, windRef = null, pigSca
 
       // Vùng vẫy và chìm
       if (currentFlood >= 100) {
-        if (!drowningTimerRef.current && !isSinkingRef.current) {
+        if (!drowningTimerRef.current && !isSinkingRef.current && !isUnderwaterRef.current) {
           setIsStruggling(true)
           drowningTimerRef.current = setTimeout(() => {
             setIsStruggling(false)
             setIsSinking(true)
             isSinkingRef.current = true
+
+            // Sau khi chìm xuống đáy, heo bất tỉnh một lúc rồi TỈNH LẠI với
+            // "kỹ năng lặn" (isUnderwater) — có thể bơi/lặn tự do dưới nước
+            // thay vì nằm bất tỉnh cho tới khi nước rút hết.
+            clearTimeout(wakeUpTimerRef.current)
+            wakeUpTimerRef.current = setTimeout(() => {
+              setIsSinking(false)
+              isSinkingRef.current = false
+              setIsUnderwater(true)
+              isUnderwaterRef.current = true
+            }, 4000)
           }, 10000)
         }
       } else {
@@ -61,11 +77,19 @@ export function usePigMovement(mode, isPanelOpen = false, windRef = null, pigSca
           setIsSinking(false)
           isSinkingRef.current = false
         }
+        if (currentFlood === 0 && isUnderwaterRef.current) {
+          // Nước rút hết hẳn -> heo lên bờ, hết "kỹ năng lặn"
+          clearTimeout(wakeUpTimerRef.current)
+          wakeUpTimerRef.current = null
+          setIsUnderwater(false)
+          isUnderwaterRef.current = false
+        }
       }
     }, 1000)
     return () => {
       clearInterval(interval)
       if (drowningTimerRef.current) clearTimeout(drowningTimerRef.current)
+      if (wakeUpTimerRef.current) clearTimeout(wakeUpTimerRef.current)
     }
   }, [])
 
@@ -134,8 +158,18 @@ export function usePigMovement(mode, isPanelOpen = false, windRef = null, pigSca
     const interval = setInterval(() => {
       const state = stateRef.current
       const waterSurfaceY = -(floodLevelRef.current / 100) * screenSize.height
-      const currentFloor = isSinkingRef.current ? 0 : waterSurfaceY
+      const currentFloor = (isSinkingRef.current || isUnderwaterRef.current) ? 0 : waterSurfaceY
       currentFloorRef.current = currentFloor
+
+      // Heo đang "bơi" trên mặt nước dâng: nước đã dâng (floodLevel > 0),
+      // chưa chìm/lặn, không bị kéo, và đang nghỉ đúng tại mặt nước (không
+      // phải đang bay/rơi vì lý do khác như gió thổi bay lên).
+      const onWaterSurface = !isSinkingRef.current && !isUnderwaterRef.current &&
+        floodLevelRef.current > 0 && !state.isDragging && Math.abs(state.y - waterSurfaceY) < 8
+      if (onWaterSurface !== isFloatingRef.current) {
+        isFloatingRef.current = onWaterSurface
+        setIsFloating(onWaterSurface)
+      }
       
       if (state.isDragging) {
         // Nếu đang kéo thả, không chạy vật lý
@@ -161,8 +195,8 @@ export function usePigMovement(mode, isPanelOpen = false, windRef = null, pigSca
         setDragVelocity({ x: dragVx, y: dragVy })
       } else if (state.y < currentFloor) {
         // Vật lý rơi rớt
-        if (isSinkingRef.current && state.y > waterSurfaceY) {
-          // Đang chìm trong nước
+        if ((isSinkingRef.current || isUnderwaterRef.current) && state.y > waterSurfaceY) {
+          // Đang chìm/lặn trong nước
           state.vy += 0.3 * pigScaleRef.current
           state.vy *= 0.9
         } else {
@@ -498,6 +532,8 @@ export function usePigMovement(mode, isPanelOpen = false, windRef = null, pigSca
     isWallHit,
     dragVelocity,
     isStruggling,
-    isSinking
+    isSinking,
+    isUnderwater,
+    isFloating
   }
 }
