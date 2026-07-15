@@ -53,6 +53,7 @@ const ANIMATIONS = {
   drag_falling: { frames: [drag2], fps: 1, loop: false },
   drag_landed: { frames: [drag3], fps: 1, loop: false },
   diving: { frames: [dive0, dive1, dive2, dive3, dive4, dive5], fps: 6, loop: true },
+  swimming: { frames: [dive0, dive1, dive2, dive3, dive4, dive5], fps: 4, loop: true },
   drowning: { frames: [drown0, drown1, drown2, drown3, drown4], fps: 6, loop: true },
   struggling: { frames: [struggle1, struggle2, struggle3], fps: 6, loop: true },
 }
@@ -108,12 +109,13 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
     dragVelocity,
     isStruggling,
     isSinking,
-    isUnderwater
+    isUnderwater,
+    isFloating
   } = usePigMovement(mode, isPanelOpen, windRef, pigScale, weatherData)
 
   const handleClick = (e) => {
     // Chỉ ngửi rác khi heo đang ở trên mặt đất (không rơi) và không bị kéo đi
-    if (!wasDragged() && !isDragging && position.y >= -10 && !isSinking && !isStruggling) {
+    if (!wasDragged() && !isDragging && position.y >= -10 && !isSinking && !isStruggling && !isFloating && !isUnderwater) {
       onDoubleClick?.(e) // Call the same handler, but it's now a single click
     }
   }
@@ -129,6 +131,8 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
     displayMode = position.y >= -5 ? 'sleeping' : 'drowning'
   } else if (isUnderwater && !isDragging) {
     displayMode = 'diving'
+  } else if (isFloating && !isDragging) {
+    displayMode = 'swimming'
   } else if (position.y < -5) {
     displayMode = 'drag_falling'
   } else if (dragState === 'landed') {
