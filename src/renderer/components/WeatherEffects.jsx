@@ -179,17 +179,17 @@ function LightningFlash() {
 }
 
 // ─── WeatherEffects (main export) ────────────────────────────────────────────
-export default function WeatherEffects({ weather }) {
+export default function WeatherEffects({ weather, floodMode = false, effectsEnabled = true }) {
   const containerRef = useRef(null)
   const [waterLevel, setWaterLevel] = useState(0)
 
   useEffect(() => {
-    const isHeavyRain = weather?.condition === 'thunderstorm'
+    const isHeavyRain = weather?.condition === 'thunderstorm' || floodMode
     const interval = setInterval(() => {
       setWaterLevel(prev => {
         if (isHeavyRain) {
-          // Ngập dần, max 100%
-          return Math.min(100, prev + 1.5)
+          // Ngập dần, max 50%
+          return Math.min(50, prev + 1.5)
         } else {
           // Rút dần
           return Math.max(0, prev - 3)
@@ -197,7 +197,7 @@ export default function WeatherEffects({ weather }) {
       })
     }, 1000)
     return () => clearInterval(interval)
-  }, [weather?.condition])
+  }, [weather?.condition, floodMode])
 
   useEffect(() => {
     const handler = (e) => {
@@ -227,10 +227,10 @@ export default function WeatherEffects({ weather }) {
   if (!weather && waterLevel <= 0) return null
 
   const { condition, windForceX, windSpeed, isStorm } = weather || {}
-  const showRain = condition === 'rain' || condition === 'drizzle' || condition === 'thunderstorm'
-  const showSnow = condition === 'snow'
-  const showWind = windSpeed > 25
-  const showLightning = condition === 'thunderstorm'
+  const showRain = effectsEnabled && (condition === 'rain' || condition === 'drizzle' || condition === 'thunderstorm')
+  const showSnow = effectsEnabled && condition === 'snow'
+  const showWind = effectsEnabled && windSpeed > 25
+  const showLightning = effectsEnabled && condition === 'thunderstorm'
   const rainIntensity = condition === 'drizzle' ? 0.4 : condition === 'thunderstorm' ? 1.5 : 1.0
 
   if (!showRain && !showSnow && !showWind && !showLightning && waterLevel <= 0) return null
@@ -245,7 +245,7 @@ export default function WeatherEffects({ weather }) {
           right: 0,
           height: `${waterLevel}vh`,
           backgroundColor: '#0ea5e9',
-          opacity: 0.3,
+          opacity: 0.1,
           transition: 'height 1s linear',
           zIndex: 10
         }} />

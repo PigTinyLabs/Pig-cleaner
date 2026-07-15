@@ -28,6 +28,8 @@ const DEFAULTS = {
   weatherAlerts: true,    // Heo phản ứng theo thời tiết (kêu nóng, lạnh, cảnh báo)
   // Vị trí thời tiết: null = tự động theo IP, hoặc { lat, lon, city } do người dùng chọn
   weatherLocation: null,
+  // Flood mode
+  floodMode: false,
 }
 
 function load() {

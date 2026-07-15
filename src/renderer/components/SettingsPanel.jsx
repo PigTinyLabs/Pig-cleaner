@@ -231,6 +231,14 @@ export default function SettingsPanel({ onClose }) {
             <label className="cache-item">
               <input
                 type="checkbox"
+                checked={settings.floodMode === true}
+                onChange={e => setSettings(prev => ({ ...prev, floodMode: e.target.checked }))}
+              />
+              <span className="cache-item-label">Bật chế độ lũ lụt (Nước ngập)</span>
+            </label>
+            <label className="cache-item">
+              <input
+                type="checkbox"
                 checked={settings.unlimitedPigSize === true}
                 onChange={e => setSettings(prev => ({ ...prev, unlimitedPigSize: e.target.checked }))}
               />

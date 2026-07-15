@@ -48,7 +48,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [permissionWarning, setPermissionWarning] = useState(false)
   const [isCleaning, setIsCleaning] = useState(false)
-  const [weatherSettings, setWeatherSettings] = useState({ weatherEffects: true, weatherAlerts: true })
+  const [weatherSettings, setWeatherSettings] = useState({ weatherEffects: true, weatherAlerts: true, floodMode: false })
 
   const { mode, bubble, pigScale, totalEaten, cameraFollowsPig, reloadSettings, triggerEat, setMode, forceBubble } = usePigState(trashInfo)
   const isPanelOpen = showStats || showCache || showSettings || permissionWarning
@@ -61,6 +61,7 @@ function App() {
         setWeatherSettings({
           weatherEffects: s.weatherEffects !== false,
           weatherAlerts: s.weatherAlerts !== false,
+          floodMode: s.floodMode === true,
         })
       })
     }
@@ -74,6 +75,7 @@ function App() {
         setWeatherSettings({
           weatherEffects: s.weatherEffects !== false,
           weatherAlerts: s.weatherAlerts !== false,
+          floodMode: s.floodMode === true,
         })
       })
     }
@@ -339,7 +341,7 @@ function App() {
   return (
     <div className={`pig-wrapper ${isEarthquake ? 'earthquake' : ''}`}>
       {/* Weather visual effects (respects settings toggle) */}
-      {weatherSettings.weatherEffects && <WeatherEffects weather={weather} />}
+      {(weatherSettings.weatherEffects || weatherSettings.floodMode) && <WeatherEffects weather={weather} floodMode={weatherSettings.floodMode} effectsEnabled={weatherSettings.weatherEffects} />}
       {/* Stats Panel */}
       {showStats && (
         <StatsPanel
@@ -388,6 +390,7 @@ function App() {
         onDoubleClick={handlePigDoubleClick}
         onWakeUp={() => setMode('idle')}
         weatherData={weatherSettings.weatherAlerts ? weather : null}
+        floodMode={weatherSettings.floodMode}
       />
     </div>
   )
