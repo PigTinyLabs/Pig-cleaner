@@ -30,6 +30,8 @@ const DEFAULTS = {
   weatherLocation: null,
   // Flood mode
   floodMode: false,
+  // Giả lập tuyết rơi
+  snowMode: false,
 }
 
 function load() {
