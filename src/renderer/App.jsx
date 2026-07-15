@@ -48,6 +48,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [permissionWarning, setPermissionWarning] = useState(false)
   const [isCleaning, setIsCleaning] = useState(false)
+  const [isSuspended, setIsSuspended] = useState(false)
   const [weatherSettings, setWeatherSettings] = useState({ weatherEffects: true, weatherAlerts: true, floodMode: false })
 
   const { mode, bubble, pigScale, totalEaten, cameraFollowsPig, reloadSettings, triggerEat, setMode, forceBubble } = usePigState(trashInfo)
@@ -228,6 +229,10 @@ function App() {
     // Load trash info ban đầu
     window.pigAPI.getTrashInfo().then(setTrashInfo)
 
+    // Lắng nghe sự kiện Suspend/Resume
+    const unsubSuspend = window.pigAPI.onAppSuspend(() => setIsSuspended(true))
+    const unsubResume = window.pigAPI.onAppResume(() => setIsSuspended(false))
+
     return () => {
       unsubTrash?.()
       unsubTrashManual?.()
@@ -238,6 +243,8 @@ function App() {
       unsubSettings?.()
       unsubCleanStarted?.()
       unsubCleanComplete?.()
+      unsubSuspend?.()
+      unsubResume?.()
     }
   }, [])
 
@@ -337,6 +344,8 @@ function App() {
       }, 2000)
     }
   }
+
+  if (isSuspended) return null
 
   return (
     <div className={`pig-wrapper ${isEarthquake ? 'earthquake' : ''}`}>
