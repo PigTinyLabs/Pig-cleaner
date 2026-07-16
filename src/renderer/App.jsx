@@ -52,7 +52,7 @@ function App() {
   const [permissionWarning, setPermissionWarning] = useState(false)
   const [isCleaning, setIsCleaning] = useState(false)
   const [isSuspended, setIsSuspended] = useState(false)
-  const [weatherSettings, setWeatherSettings] = useState({ weatherEffects: true, weatherAlerts: true, floodMode: false, petType: 'pig', soundEnabled: false })
+  const [weatherSettings, setWeatherSettings] = useState({ weatherEffects: true, weatherAlerts: true, poolMode: false, petType: 'pig', soundEnabled: false })
 
   const { mode, bubble, pigScale, totalEaten, cameraFollowsPig, reloadSettings, triggerEat, setMode, forceBubble, explosionEvent, clearExplosionEvent, followers } = usePigState(trashInfo, weatherSettings.petType)
   const isPanelOpen = showStats || showCache || showSettings || permissionWarning
@@ -78,7 +78,7 @@ function App() {
         setWeatherSettings({
           weatherEffects: s.weatherEffects !== false,
           weatherAlerts: s.weatherAlerts !== false,
-          floodMode: s.floodMode === true,
+          poolMode: s.poolMode === true,
           petType: s.petType || 'pig',
           soundEnabled: s.soundEnabled === true,
         })
@@ -97,7 +97,7 @@ function App() {
         setWeatherSettings({
           weatherEffects: s.weatherEffects !== false,
           weatherAlerts: s.weatherAlerts !== false,
-          floodMode: s.floodMode === true,
+          poolMode: s.poolMode === true,
           petType: s.petType || 'pig',
           soundEnabled: s.soundEnabled === true,
         })
@@ -398,7 +398,7 @@ function App() {
   return (
     <div className={`pig-wrapper ${isEarthquake ? 'earthquake' : ''}`}>
       {/* Weather visual effects (respects settings toggle) */}
-      {(weatherSettings.weatherEffects || weatherSettings.floodMode) && <WeatherEffects weather={weather} floodMode={weatherSettings.floodMode} effectsEnabled={weatherSettings.weatherEffects} />}
+      {(weatherSettings.weatherEffects || weatherSettings.poolMode) && <WeatherEffects weather={weather} poolMode={weatherSettings.poolMode} effectsEnabled={weatherSettings.weatherEffects} />}
       {/* Stats Panel */}
       {showStats && (
         <StatsPanel
@@ -450,7 +450,7 @@ function App() {
         onDoubleClick={handlePigDoubleClick}
         onWakeUp={() => setMode('idle')}
         weatherData={weatherSettings.weatherAlerts ? weather : null}
-        floodMode={weatherSettings.floodMode}
+        poolMode={weatherSettings.poolMode}
         petType={weatherSettings.petType}
         explosionEvent={explosionEvent}
         onExplosionDone={clearExplosionEvent}
