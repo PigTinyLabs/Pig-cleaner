@@ -133,6 +133,8 @@ function WindStreaks({ windForceX, windSpeed }) {
 function LightningFlash() {
   const [flashData, setFlashData] = useState(null)
 
+  const timerRef = useRef(null)
+
   useEffect(() => {
     function flash() {
       setFlashData({
@@ -146,10 +148,10 @@ function LightningFlash() {
       
       setTimeout(() => setFlashData(null), 150)
       // Flash lại ngẫu nhiên sau 4-15 giây
-      setTimeout(flash, randomBetween(4000, 15000))
+      timerRef.current = setTimeout(flash, randomBetween(4000, 15000))
     }
-    const t = setTimeout(flash, randomBetween(1000, 5000))
-    return () => clearTimeout(t)
+    timerRef.current = setTimeout(flash, randomBetween(1000, 5000))
+    return () => clearTimeout(timerRef.current)
   }, [])
 
   if (!flashData) return null
