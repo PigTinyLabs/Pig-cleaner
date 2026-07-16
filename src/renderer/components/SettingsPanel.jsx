@@ -21,7 +21,7 @@ export default function SettingsPanel({ onClose }) {
     weatherEffects: true,
     weatherAlerts: true,
     weatherLocation: null,
-    floodMode: false,
+    poolMode: false,
     soundEnabled: false,
     language: i18n.language || 'en',
   })
@@ -289,10 +289,10 @@ export default function SettingsPanel({ onClose }) {
             <label className="cache-item">
               <input
                 type="checkbox"
-                checked={settings.floodMode === true}
-                onChange={e => setSettings(prev => ({ ...prev, floodMode: e.target.checked }))}
+                checked={settings.poolMode === true}
+                onChange={e => setSettings(prev => ({ ...prev, poolMode: e.target.checked }))}
               />
-              <span className="cache-item-label">{t('settingsPanel.flood')}</span>
+              <span className="cache-item-label">{t('settingsPanel.pool')}</span>
             </label>
             <label className="cache-item">
               <input
