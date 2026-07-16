@@ -209,7 +209,7 @@ function FollowerPet({ index, scale }) {
   )
 }
 
-export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = false, isCleaning = false, cameraFollowsPig, onDoubleClick, onWakeUp, weatherData = null, floodMode = false, petType = 'pig', explosionEvent = null, onExplosionDone, followers = [] }) {
+export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = false, isCleaning = false, cameraFollowsPig, onDoubleClick, onWakeUp, weatherData = null, poolMode = false, petType = 'pig', explosionEvent = null, onExplosionDone, followers = [] }) {
   const { t } = useTranslation()
   const windRef = useRef(null)
 
@@ -230,7 +230,7 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
     isAboveWater,
     paleLevel,
     isSpaceFrozen
-  } = usePigMovement(mode, isPanelOpen, windRef, pigScale, weatherData, floodMode)
+  } = usePigMovement(mode, isPanelOpen, windRef, pigScale, weatherData, poolMode)
 
   const handleClick = (e) => {
     // Cho phép ngửi/ăn rác nếu không bị kéo đi và (đang trên đất hoặc đang bơi)

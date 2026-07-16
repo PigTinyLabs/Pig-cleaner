@@ -181,13 +181,13 @@ function LightningFlash() {
 }
 
 // ─── WeatherEffects (main export) ────────────────────────────────────────────
-export default function WeatherEffects({ weather, floodMode = false, effectsEnabled = true }) {
+export default function WeatherEffects({ weather, poolMode = false, effectsEnabled = true }) {
   const containerRef = useRef(null)
   const [waterLevel, setWaterLevel] = useState(0)
   const [snowLevel, setSnowLevel] = useState(0)
 
   useEffect(() => {
-    const isHeavyRain = weather?.condition === 'thunderstorm' || floodMode
+    const isHeavyRain = weather?.condition === 'thunderstorm' || poolMode
     const interval = setInterval(() => {
       setWaterLevel(prev => {
         if (isHeavyRain) {
@@ -211,7 +211,7 @@ export default function WeatherEffects({ weather, floodMode = false, effectsEnab
       })
     }, 1000)
     return () => clearInterval(interval)
-  }, [weather?.condition, floodMode])
+  }, [weather?.condition, poolMode])
 
   useEffect(() => {
     const handler = (e) => {
