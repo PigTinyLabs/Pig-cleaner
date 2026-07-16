@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 
 const isElectron = typeof window !== 'undefined' && window.pigAPI
 
-export function usePigMovement(mode, isPanelOpen = false, windRef = null, pigScale = 1.0, weatherData = null, floodMode = false) {
+export function usePigMovement(mode, isPanelOpen = false, windRef = null, pigScale = 1.0, weatherData = null, poolMode = false) {
   // position.y = 0 means on the floor (bottom of screen). Negative y means in the air.
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [screenSize, setScreenSize] = useState({ width: 800, height: 600 })
@@ -31,17 +31,17 @@ export function usePigMovement(mode, isPanelOpen = false, windRef = null, pigSca
   const hoverWanderRef = useRef(0)
   const hasImpactedRef = useRef(true)
   const lastIsDraggingRef = useRef(false)
-  const floodModeRef = useRef(floodMode)
+  const poolModeRef = useRef(poolMode)
 
   // Cập nhật refs mỗi khi props thay đổi
   useEffect(() => { pigScaleRef.current = pigScale }, [pigScale])
   useEffect(() => { weatherRef.current = weatherData }, [weatherData])
-  useEffect(() => { floodModeRef.current = floodMode }, [floodMode])
+  useEffect(() => { poolModeRef.current = poolMode }, [poolMode])
 
   // Mô phỏng mực nước
   useEffect(() => {
     const interval = setInterval(() => {
-      const isHeavyRain = weatherRef.current?.condition === 'thunderstorm' || floodModeRef.current
+      const isHeavyRain = weatherRef.current?.condition === 'thunderstorm' || poolModeRef.current
       let currentFlood = floodLevelRef.current
       if (isHeavyRain) {
         currentFlood = Math.min(50, currentFlood + 1.5)

@@ -28,8 +28,8 @@ const DEFAULTS = {
   weatherAlerts: true,    // Heo phản ứng theo thời tiết (kêu nóng, lạnh, cảnh báo)
   // Vị trí thời tiết: null = tự động theo IP, hoặc { lat, lon, city } do người dùng chọn
   weatherLocation: null,
-  // flood mode
-  floodMode: false,
+  // pool mode
+  poolMode: false,
   // Ngôn ngữ
   language: 'en',
   // Pet type (pig or duck)
