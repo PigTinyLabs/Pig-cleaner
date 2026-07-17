@@ -37,6 +37,7 @@ import diveDown2 from '../assets/sprites/dive_down2.png'
 import diveDown3 from '../assets/sprites/dive_down3.png'
 import diveUp from '../assets/sprites/dive_up.png'
 import diveFloat from '../assets/sprites/dive_float.png'
+import diveFloat1 from '../assets/sprites/dive_float1.png'
 
 // Drowning frames
 import drown1 from '../assets/sprites/drown1.png'
@@ -61,9 +62,9 @@ const ANIMATIONS = {
   drag_held: { frames: [drag1], fps: 1, loop: false },
   drag_falling: { frames: [drag2], fps: 1, loop: false },
   drag_landed: { frames: [drag3], fps: 1, loop: false },
-  diving_float: { frames: [diveFloat], fps: 1, loop: true }, // Nổi lơ lửng, không di chuyển
+  diving_float: { frames: [diveFloat, diveFloat1], fps: 3, loop: true }, // Nổi lơ lửng, không di chuyển
   diving_down: { frames: [diveDown1, diveDown2, diveDown3], fps: 6, loop: true }, // Đang lặn xuống
-  diving_up: { frames: [diveUp], fps: 1, loop: true }, // Đang ngoi lên
+  diving_up: { frames: [diveFloat, diveFloat1], fps: 3, loop: true }, // Đang ngoi lên
   diving_bottom: { frames: [diveBottom1, diveBottom2, diveBottom3, diveBottom2, diveBottom4, diveBottom5], fps: 8, loop: true }, // Bơi dưới đáy nước
   drowning: { frames: [drown1, drown2, drown3, drown4, drown5], fps: 6, loop: true },
   drowning_sink: { frames: [struggle2], fps: 1, loop: false },

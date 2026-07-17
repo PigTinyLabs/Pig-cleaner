@@ -88,6 +88,25 @@ export function usePigState(trashInfo, petType = 'pig') {
     return () => window.removeEventListener('bird-caught-follower', handleBirdCaught)
   }, [])
 
+  // MỚI: Xử lý giải cứu heo con khi heo mẹ ăn chim
+  useEffect(() => {
+    const handleRescue = (e) => {
+      const rescued = e.detail?.piglets
+      if (rescued && rescued.length > 0) {
+        setFollowers(prev => [...prev, ...rescued])
+
+        // Hiện bong bóng thoại tức giận
+        const msg = petType === 'duck'
+          ? 'Quắc! Nhả con ta ra! 🦆😡'
+          : 'Oink! Dám bắt con ta à! 🐽😡'
+        setBubble(msg)
+        setTimeout(() => setBubble(null), 4000)
+      }
+    }
+    window.addEventListener('rescue-piglets', handleRescue)
+    return () => window.removeEventListener('rescue-piglets', handleRescue)
+  }, [petType])
+
   // Hiện speech bubble với timeout
   function showBubble(quotes, duration = 3000) {
     if (!quotes) return
