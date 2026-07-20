@@ -37,7 +37,7 @@ const BIRD_PECK_FRAMES = Object.keys(birdPeckFramesRaw).sort((a, b) => {
 
 const BIRD_PHASES = {
   swim: { start: 29, end: 31 },
-  patrol: { start: 2, end: 5 },
+  patrol: { start: 3, end: 7 },
   diving: { start: 6, end: 8 },
   catching: { start: 21, end: 22 },
   rising: { start: 23, end: 27 }
@@ -46,7 +46,7 @@ const BIRD_PHASES = {
 const BIRD_GROUND_PHASES = {
   flyaway: { start: 0, end: BIRD_WALK_FRAMES.length - 1 },
   foraging: { start: 0, end: BIRD_PECK_FRAMES.length - 1 },
-  scared: { start: 4, end: 4 },
+  scared: { start: 4, end: 6 },
 }
 
 function useFishFrame(fps = 9) {
@@ -393,15 +393,9 @@ export default function WeatherEffects({ weather, poolMode = false, effectsEnabl
           if (st.phase === 'flyaway' || st.phase === 'foraging' || st.phase === 'scared') {
             const p = BIRD_GROUND_PHASES[st.phase]
             st.frameIdx++
+            // SỬA Ở ĐÂY: Cứ chạy lố frame cuối thì quay lại frame đầu, áp dụng cho cả 3 phase
             if (st.frameIdx > p.end) {
-              if (st.phase === 'foraging') {
-                st.frameIdx = p.start
-              } else if (st.phase === 'scared') {
-                st.frameIdx = p.end
-              } else {
-                st.phase = 'patrol'
-                st.frameIdx = BIRD_PHASES.patrol.start
-              }
+              st.frameIdx = p.start
             }
           } else {
             const isHostagePatrol = st.phase === 'patrol' && st.pigletsEaten.length > 0
