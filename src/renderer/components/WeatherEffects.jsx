@@ -292,7 +292,7 @@ export default function WeatherEffects({ weather, poolMode = false, effectsEnabl
           targetGrain: false,
           targetWater: false,
           forageUntil: 0,
-          nextGrainTime: now + randomBetween(6000, 14000),
+          nextGrainTime: now + randomBetween(2000, 5000),
           pigletsEaten: [],
           hue: getRandomHue()
         }
@@ -491,7 +491,7 @@ export default function WeatherEffects({ weather, poolMode = false, effectsEnabl
                 safeLog(`[Bird AI] Đã đến giờ kiếm ăn: Quyết định ĐÁP XUỐNG ĐẤT mổ thóc.`);
               }
 
-              st.nextGrainTime = Date.now() + randomBetween(10000, 20000)
+              st.nextGrainTime = Date.now() + randomBetween(4000, 8000)
             }
           }
         } else if (st.phase === 'flyaway') {
