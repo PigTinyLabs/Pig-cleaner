@@ -36,7 +36,7 @@ const BIRD_PECK_FRAMES = Object.keys(birdPeckFramesRaw).sort((a, b) => {
 }).map(key => birdPeckFramesRaw[key])
 
 const BIRD_PHASES = {
-  swim: { start: 29, end: 31 },
+  swim: { start: 28, end: 30 },
   patrol: { start: 3, end: 7 },
   diving: { start: 6, end: 8 },
   catching: { start: 21, end: 22 },
@@ -553,7 +553,7 @@ export default function WeatherEffects({ weather, poolMode = false, effectsEnabl
             st.phase = 'catching'
             st.frameIdx = BIRD_PHASES.catching.start
             safeLog(`[Bird AI] Vừa bắt trúng mồi (Heo/Cá)!`);
-          } else if (st.targetGrain && st.y >= st.targetY) {
+          } else if (st.targetGrain && st.y >= st.targetY && poolMode === false) {
             st.y = st.targetY
             st.vy = 0
             st.vx = 0

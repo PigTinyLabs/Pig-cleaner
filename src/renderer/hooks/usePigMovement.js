@@ -377,16 +377,17 @@ export function usePigMovement(mode, isPanelOpen = false, windRef = null, pigSca
         } else {
           if (dragStateRef.current === 'falling' || (dragStateRef.current === 'held' && state.vy > 5)) {
             updateDragState('landed')
-            if (isInWater && state.y >= floatingY) {
-              if (!hasImpactedRef.current) {
-                window.dispatchEvent(new CustomEvent('water-splash', { detail: { vy: Math.abs(state.vy) } }))
-                hasImpactedRef.current = true
-                if (state.vy > 10) state.vy *= 0.4
-                else state.vy *= 0.8
-              } else {
-                state.vy *= 0.8
-              }
-            } else if (pigScaleRef.current >= 2.0 && state.y >= 0 && !poolModeRef.current) {
+            // if (isInWater && state.y >= floatingY) {
+            //   if (!hasImpactedRef.current) {
+            //     window.dispatchEvent(new CustomEvent('water-splash', { detail: { vy: Math.abs(state.vy) } }))
+            //     hasImpactedRef.current = true
+            //     if (state.vy > 10) state.vy *= 0.4
+            //     else state.vy *= 0.8
+            //   } else {
+            //     state.vy *= 0.8
+            //   }
+            // } else 
+            if (pigScaleRef.current >= 2.0 && state.y >= 0 && !poolModeRef.current) {
               if (!hasImpactedRef.current) {
                 window.dispatchEvent(new CustomEvent('earthquake'))
                 hasImpactedRef.current = true
