@@ -170,7 +170,7 @@ export function usePigMovement(mode, isPanelOpen = false, windRef = null, pigSca
         submergedTimeRef.current = 0
       }
 
-      const SUFFOCATE_MS = 20000 // ~20 giây liên tục không ngoi lên được sẽ bắt đầu ngạt
+      const SUFFOCATE_MS = 25000 // ~20 giây liên tục không ngoi lên được sẽ bắt đầu ngạt
       if (
         !isSuffocatingRef.current &&
         submergedTimeRef.current > SUFFOCATE_MS &&
