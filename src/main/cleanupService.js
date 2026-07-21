@@ -232,6 +232,7 @@ const CACHE_CATEGORIES = [
 async function getCacheTypes() {
   const result = []
   for (const cat of CACHE_CATEGORIES) {
+    if (cat.paths.length === 0) continue
     let totalSize = 0
     let totalCount = 0
     for (const p of cat.paths) {
