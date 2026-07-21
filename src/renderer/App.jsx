@@ -54,7 +54,7 @@ function App() {
   const [isSuspended, setIsSuspended] = useState(false)
   const [weatherSettings, setWeatherSettings] = useState({ weatherEffects: true, weatherAlerts: true, poolMode: false, petType: 'pig', soundEnabled: false })
 
-  const { mode, bubble, pigScale, setPigScale, totalEaten, cameraFollowsPig, reloadSettings, triggerEat, setMode, forceBubble, explosionEvent, clearExplosionEvent, followers } = usePigState(trashInfo, weatherSettings.petType)
+  const { mode, bubble, pigScale, pigBaseScale, pigEatenScale, setPigScale, resetPigScale, totalEaten, cameraFollowsPig, reloadSettings, triggerEat, setMode, forceBubble, explosionEvent, clearExplosionEvent, followers } = usePigState(trashInfo, weatherSettings.petType)
   const isPanelOpen = showStats || showCache || showSettings || permissionWarning
   const weather = useWeather()
   const { t, i18n } = useTranslation()
@@ -425,6 +425,8 @@ function App() {
           trashInfo={trashInfo}
           totalEaten={totalEaten}
           pigScale={pigScale}
+          pigBaseScale={pigBaseScale}
+          pigEatenScale={pigEatenScale}
           petType={weatherSettings.petType}
           weather={weather}
           onClose={() => setShowStats(false)}
@@ -454,8 +456,10 @@ function App() {
       {/* Settings Panel */}
       {showSettings && (
         <SettingsPanel
-          pigScale={pigScale}
+          pigScale={pigBaseScale}
+          pigEatenScale={pigEatenScale}
           onChangePigScale={setPigScale}
+          onResetPigScale={resetPigScale}
           onClose={() => {
             setShowSettings(false)
             handleReloadSettings()
@@ -467,7 +471,7 @@ function App() {
       <PigPet
         mode={mode}
         bubble={bubble}
-        pigScale={pigScale}
+        pigScale={pigBaseScale + pigEatenScale * 0.35}
         isPanelOpen={isPanelOpen}
         isCleaning={isCleaning}
         cameraFollowsPig={cameraFollowsPig}
@@ -478,7 +482,10 @@ function App() {
         petType={weatherSettings.petType}
         explosionEvent={explosionEvent}
         onExplosionDone={clearExplosionEvent}
-        followers={followers}
+        followers={followers.map(f => ({
+          ...f,
+          scale: (pigBaseScale * (f.relativeScale || 0.2)) + (f.eatenScale || 0) * 0.35
+        }))}
       />
     </div>
   )
