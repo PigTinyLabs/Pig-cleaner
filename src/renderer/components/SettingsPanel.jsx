@@ -34,7 +34,7 @@ export default function SettingsPanel({ onClose, pigScale = 1.0, pigEatenScale =
   const [searchingLocation, setSearchingLocation] = useState(false)
   const [autoCity, setAutoCity] = useState(null)
   const [initialLanguage] = useState(i18n.language)
-  const petLabel = t(settings.petType === 'duck' ? 'settingsPanel.duck' : 'settingsPanel.pig')
+  const petLabel = t(settings.petType === 'duck' ? 'settingsPanel.duck' : (settings.petType === 'dog' ? 'settingsPanel.dog' : 'settingsPanel.pig'))
 
   useEffect(() => {
     loadData()
@@ -253,6 +253,7 @@ export default function SettingsPanel({ onClose, pigScale = 1.0, pigEatenScale =
               >
                 <option value="pig">{t('settingsPanel.pig', 'Heo (Pig)')}</option>
                 <option value="duck">{t('settingsPanel.duck', 'Vịt (Duck)')}</option>
+                <option value="dog">{t('settingsPanel.dog', 'Chó (Dog)')}</option>
               </select>
             </div>
 
