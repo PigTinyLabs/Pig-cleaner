@@ -274,15 +274,19 @@ export function usePigState(trashInfo, petType = 'pig') {
     }
 
     setFollowers(prev => {
-      let updated = prev.map((f, idx) => ({
-        ...f,
-        eatenScale: (f.eatenScale || 0) + (pigletGrowths[idx] || 0)
-      }))
+      let updated = prev.map((f, idx) => {
+        const addedGrowth = pigletGrowths[idx] || 0;
+        return {
+          ...f,
+          scale: (f.scale !== undefined ? f.scale : (baseAtBirth * (f.relativeScale || 0.2))) + addedGrowth,
+          eatenScale: (f.eatenScale || 0) + addedGrowth
+        };
+      })
 
       if (exploded) {
         const newPiglets = Array.from({ length: 8 }).map(() => ({
           id: Math.random().toString(),
-          relativeScale: 0.2, // 20% size mẹ
+          scale: baseAtBirth * 0.2,
           eatenScale: 0,
           hue: getRandomHue()
         }))
