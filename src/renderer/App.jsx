@@ -58,8 +58,8 @@ function App() {
   const isPanelOpen = showStats || showCache || showSettings || permissionWarning
   const weather = useWeather()
   const { t, i18n } = useTranslation()
-  const petLabel = t(weatherSettings.petType === 'duck' ? 'settingsPanel.duck' : 'settingsPanel.pig')
-  const petEmoji = weatherSettings.petType === 'duck' ? '🦆' : '🐽'
+  const petLabel = t(weatherSettings.petType === 'duck' ? 'settingsPanel.duck' : (weatherSettings.petType === 'dog' ? 'settingsPanel.dog' : 'settingsPanel.pig'))
+  const petEmoji = weatherSettings.petType === 'duck' ? '🦆' : (weatherSettings.petType === 'dog' ? '🐕' : '🐽')
 
   // Khi đạt 500%, hiện bong bóng ăn mừng lúc "nổ" tách nhỏ
   useEffect(() => {
