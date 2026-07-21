@@ -81,8 +81,8 @@ export function usePigState(trashInfo, petType = 'pig') {
     const shrinkInterval = setInterval(() => {
       setPigEatenScale(prev => {
         if (isNaN(prev) || prev <= 0) return 0
-        // Tốc độ giảm RẤT CHẬM và chỉ giảm khi đã lớn (giảm 0.0001 mỗi giây nếu eatenScale = 1.0, tức là mất ~166 phút mới hết 1.0)
-        const shrinkRate = prev * 0.0001
+        // Giảm 0.1% mỗi giây (khoảng 45% sau 10 phút) để người dùng có thể nhận thấy
+        const shrinkRate = prev * 0.001
         return Math.max(0, prev - shrinkRate)
       })
 
@@ -138,7 +138,7 @@ export function usePigState(trashInfo, petType = 'pig') {
         // Hiện bong bóng thoại tức giận
         const msg = petType === 'duck'
           ? 'Quắc! Nhả con ta ra! 🦆😡'
-          : 'Oink! Dám bắt con ta à! 🐽😡'
+          : (petType === 'dog' ? 'Gâu! Trả con lại đây! 🐶😡' : 'Oink! Dám bắt con ta à! 🐽😡')
         setBubble(msg)
         setTimeout(() => setBubble(null), 4000)
       }
@@ -161,8 +161,8 @@ export function usePigState(trashInfo, petType = 'pig') {
     if (trashInfo.sizeBytes > 0) {
       setMode('sniffing')
 
-      const key = petType === 'duck' ? 'duck.sniffQuotes' : 'pig.sniffQuotes'
-      const def = petType === 'duck' ? ['Quắc! Có rác kìa! 🦆', 'Tắm rác không ta?', 'Có gì ăn được không?'] : ['Khứu... Có mùi rác! 👃', 'Ngửi thấy rồi! 🐽', 'Rác rác... đâu đâu?', 'Hmm... thùng rác có gì?']
+      const key = petType === 'duck' ? 'duck.sniffQuotes' : (petType === 'dog' ? 'dog.sniffQuotes' : 'pig.sniffQuotes')
+      const def = petType === 'duck' ? ['Quắc! Có rác kìa! 🦆', 'Tắm rác không ta?', 'Có gì ăn được không?'] : (petType === 'dog' ? ['Gâu! Có mùi rác! 🐕', 'Đánh hơi thấy rác! 👃', 'Khịt khịt... rác đâu?'] : ['Khứu... Có mùi rác! 👃', 'Ngửi thấy rồi! 🐽', 'Rác rác... đâu đâu?', 'Hmm... thùng rác có gì?'])
       let quotes = t(key, { returnObjects: true, defaultValue: def })
       if (!Array.isArray(quotes)) quotes = def
       showBubble(quotes)
@@ -220,8 +220,8 @@ export function usePigState(trashInfo, petType = 'pig') {
       setMode(next)
 
       if (next === 'idle' && Math.random() < 0.3) {
-        const key = petType === 'duck' ? 'duck.idleQuotes' : 'pig.idleQuotes'
-        const def = petType === 'duck' ? ['Quắc quắc! 🦆', 'Ăn gì chưa?', 'Buồn ngủ quá~', '*quạt cánh*', 'Hôm nay trời đẹp ghê'] : ['Oink oink! 🐽', 'Ăn gì chưa? 🍖', 'Buồn ngủ quá~', '*hít thở*', 'Hôm nay có rác không ta?']
+        const key = petType === 'duck' ? 'duck.idleQuotes' : (petType === 'dog' ? 'dog.idleQuotes' : 'pig.idleQuotes')
+        const def = petType === 'duck' ? ['Quắc quắc! 🦆', 'Ăn gì chưa?', 'Buồn ngủ quá~', '*quạt cánh*', 'Hôm nay trời đẹp ghê'] : (petType === 'dog' ? ['Gâu gâu! 🐕', 'Có ai chơi cùng không?', 'Đói bụng quá', '*vẫy đuôi*', 'Woof woof!'] : ['Oink oink! 🐽', 'Ăn gì chưa? 🍖', 'Buồn ngủ quá~', '*hít thở*', 'Hôm nay có rác không ta?'])
         let quotes = t(key, { returnObjects: true, defaultValue: def })
         if (!Array.isArray(quotes)) quotes = def
         showBubble(quotes)
@@ -326,15 +326,15 @@ export function usePigState(trashInfo, petType = 'pig') {
       ? `+${freedKB.toFixed(0)}KB`
       : `+${(freedKB / 1024).toFixed(1)}MB`
 
-    const yummyKey = petType === 'duck' ? 'duck.yummy' : 'pig.yummy'
-    const yummyDef = petType === 'duck' ? 'Quắc, ngon!' : 'Ngon quá!'
+    const yummyKey = petType === 'duck' ? 'duck.yummy' : (petType === 'dog' ? 'dog.yummy' : 'pig.yummy')
+    const yummyDef = petType === 'duck' ? 'Quắc, ngon!' : (petType === 'dog' ? 'Gâu, ngon quá!' : 'Ngon quá!')
     forceBubble(`${sizeStr}! ${t(yummyKey, yummyDef)}`)
 
     setTimeout(() => {
       setMode('full')
 
-      const key = petType === 'duck' ? 'duck.fullQuotes' : 'pig.fullQuotes'
-      const def = petType === 'duck' ? ['No ứ hự! 🦆', 'Ợ~ 😮‍💨', 'Căng mỏ rồi', 'Ăn nữa không bay nổi đâu', 'Bụng to quá!'] : ['Căng da bụng quá! 🤰', 'No rồi... ợ~ 😮‍💨', 'Ăn thêm được nữa 💪', 'Heo mập hơn rồi nè!', 'Béo ra rồi nha 🐖']
+      const key = petType === 'duck' ? 'duck.fullQuotes' : (petType === 'dog' ? 'dog.fullQuotes' : 'pig.fullQuotes')
+      const def = petType === 'duck' ? ['No ứ hự! 🦆', 'Ợ~ 😮‍💨', 'Căng mỏ rồi', 'Ăn nữa không bay nổi đâu', 'Bụng to quá!'] : (petType === 'dog' ? ['No cành hông! 🐕', 'Ợ~ 😮‍💨', 'Ngon tuyệt!', 'Muốn ngủ quá...', 'Bụng tròn vo!'] : ['Căng da bụng quá! 🤰', 'No rồi... ợ~ 😮‍💨', 'Ăn thêm được nữa 💪', 'Heo mập hơn rồi nè!', 'Béo ra rồi nha 🐖'])
       let quotes = t(key, { returnObjects: true, defaultValue: def })
       if (!Array.isArray(quotes)) quotes = def
       showBubble(quotes)

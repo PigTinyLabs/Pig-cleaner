@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { usePigMovement } from '../hooks/usePigMovement'
 import SkyClouds from './SkyClouds'
@@ -76,6 +76,37 @@ const ANIMATIONS = {
 const duckModules = import.meta.glob('../assets/duck_sprites/*.png', { eager: true, import: 'default' })
 const getDuck = (n) => duckModules[`../assets/duck_sprites/duck_${n}.png`]
 
+// ─── Dog Animations ────────────────────────────────────────────────────────
+const dogModules = import.meta.glob('../assets/sprites/dog/*.png', { eager: true, import: 'default' })
+const getDog = (n) => dogModules[`../assets/sprites/dog/dog_${n}.png`]
+
+const dogExtraModules = import.meta.glob('../assets/sprites/dog_extra/*.png', { eager: true, import: 'default' })
+const getDogExtra = (n) => dogExtraModules[`../assets/sprites/dog_extra/dog_extra_${n}.png`]
+
+const dogSniffModules = import.meta.glob('../assets/sprites/dog_sniff/*.png', { eager: true, import: 'default' })
+const getDogSniff = (n) => dogSniffModules[`../assets/sprites/dog_sniff/dog_sniff_${n}.png`]
+
+const DOG_ANIMATIONS = {
+  idle: { frames: [getDog(1), getDog(2), getDog(1)], fps: 2, loop: true },
+  walking: { frames: [getDog(4), getDog(5), getDog(6), getDog(7)], fps: 6, loop: true },
+  sniffing: { frames: [getDogSniff(1), getDogSniff(2), getDogSniff(2), getDogSniff(2), getDogSniff(2), getDogSniff(3), getDogSniff(3), getDogSniff(2), getDogSniff(2), getDogSniff(2), getDogSniff(2), getDogSniff(3), getDogSniff(3)], fps: 2, loop: true },
+  eating: { frames: [getDog(9), getDog(10), getDog(9), getDog(10)], fps: 6, loop: true },
+  full: { frames: [getDog(10), getDog(1)], fps: 2, loop: true },
+  sleeping: { frames: [getDog(11), getDog(12), getDog(13), getDog(14), getDog(15)], fps: 1.5, loop: true },
+  scared: { frames: [getDog(16)], fps: 1, loop: true },
+  drag_held: { frames: [getDog(17)], fps: 1, loop: false },
+  drag_falling: { frames: [getDog(18)], fps: 1, loop: false },
+  drag_landed: { frames: [getDog(19)], fps: 1, loop: false },
+  diving_float: { frames: [getDog(25)], fps: 1, loop: true },
+  diving_down: { frames: [getDog(26), getDog(27), getDog(28)], fps: 6, loop: true },
+  diving_up: { frames: [getDog(29)], fps: 1, loop: true },
+  diving_bottom: { frames: [getDog(30), getDog(31), getDog(32)], fps: 6, loop: true },
+  drowning: { frames: [getDog(20), getDog(21), getDog(22)], fps: 6, loop: true },
+  drowning_sink: { frames: [getDog(23)], fps: 1, loop: false },
+  drowning_bottom: { frames: [getDog(24)], fps: 1, loop: false },
+  struggling: { frames: [getDog(20), getDog(21), getDog(22)], fps: 6, loop: true },
+}
+
 const DUCK_ANIMATIONS = {
   idle: { frames: [getDuck(1), getDuck(2), getDuck(1)], fps: 2, loop: true },
   walking: { frames: [getDuck(5), getDuck(6), getDuck(7), getDuck(8), getDuck(9)], fps: 10, loop: true },
@@ -99,8 +130,27 @@ const DUCK_ANIMATIONS = {
 
 // ─── hooks & components ───────────────────────────────────────────────────────────
 function useSprite(mode, petType = 'pig') {
-  const anims = petType === 'duck' ? DUCK_ANIMATIONS : ANIMATIONS
-  const config = anims[mode] || anims.idle
+  const anims = petType === 'duck' ? DUCK_ANIMATIONS : (petType === 'dog' ? DOG_ANIMATIONS : ANIMATIONS)
+
+  const config = useMemo(() => {
+    let cfg = anims[mode] || anims.idle
+    if (petType === 'dog' && mode === 'eating') {
+      const options = [
+        anims.eating, // normal food
+        { frames: [getDogExtra(4), getDogExtra(5), getDogExtra(4), getDogExtra(5)], fps: 6, loop: true }, // chestnut
+        { frames: [getDogExtra(4), getDogExtra(6), getDogExtra(4), getDogExtra(6)], fps: 6, loop: true }, // bone
+      ]
+      cfg = options[Math.floor(Math.random() * options.length)]
+    } else if (petType === 'dog' && mode === 'sleeping') {
+      const options = [
+        anims.sleeping, // normal sleep
+        { frames: [getDogExtra(14), getDogExtra(15), getDogExtra(16)], fps: 1.5, loop: true }, // extra sleep
+      ]
+      cfg = options[Math.floor(Math.random() * options.length)]
+    }
+    return cfg
+  }, [mode, petType, anims])
+
   const [frameIdx, setFrameIdx] = useState(0)
   const timerRef = useRef(null)
 
@@ -152,7 +202,7 @@ const HISTORY_SIZE = 400
 let historyBuffer = []
 
 // COMPONENT HEO CON ĐANG ĐI THEO MẸ
-function FollowerPet({ id, index, scale, hue }) {
+function FollowerPet({ id, index, scale, hue, eatenScale }) {
   const frameOffset = (index + 1) * 12
   const currentOffsetX = React.useRef(0)
 
@@ -185,7 +235,7 @@ function FollowerPet({ id, index, scale, hue }) {
       data-id={id}
       data-scale={scale}
       data-hue={hue}
-      data-piglet={JSON.stringify({ id, scale, hue, eatenScale: arguments[0].eatenScale })}
+      data-piglet={JSON.stringify({ id, scale, hue, eatenScale })}
     >
       <div style={{
         transform: `scaleX(${state.facing}) skewX(${state.dragSkewX}deg) scale(${state.dragScaleX}, ${state.dragScaleY})`,
@@ -211,7 +261,7 @@ function FollowerPet({ id, index, scale, hue }) {
 // COMPONENT HEO CON TÁCH BẦY (ĐI KHỎI MÀN HÌNH VÀ MỜ DẦN)
 function DepartingPiglet({ piglet, onDone, petType }) {
   const sprite = useSprite('walking', petType)
-  const [bubble, setBubble] = useState(petType === 'duck' ? "Quắc! Con đi đây! 👋" : "Oink! Con tự lập rồi! 👋")
+  const [bubble, setBubble] = useState(petType === 'duck' ? "Quắc! Con đi đây! 👋" : (petType === 'dog' ? "Gâu! Con tự lập rồi! 👋" : "Oink! Con tự lập rồi! 👋"))
 
   const containerRef = useRef(null)
 
@@ -635,7 +685,7 @@ export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = fal
             borderRadius: 20, fontSize: 13, fontFamily: '-apple-system, sans-serif',
             fontWeight: 600, pointerEvents: 'none', backdropFilter: 'blur(10px)', whiteSpace: 'nowrap'
           }}>
-            {t(petType === 'duck' ? 'duck.cleaning' : 'pig.cleaning', 'Eating trash... 🐽')}
+            {t(petType === 'duck' ? 'duck.cleaning' : (petType === 'dog' ? 'dog.cleaning' : 'pig.cleaning'), 'Eating trash... 🐽')}
           </div>
         )}
 
