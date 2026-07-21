@@ -7,32 +7,52 @@ export const getRandomHue = () => Math.floor(Math.random() * 360)
 // Trạng thái: idle → walking → sniffing → eating → sleeping → full
 // Cycle ngẫu nhiên dựa trên context
 
+// pigScale (render) = pigBaseScale + pigEatenScale
+//   pigBaseScale: do người dùng set qua slider (0.05-1.0), tồn tại lâu dài
+//   pigEatenScale: tăng khi ăn rác, tự giảm dần về 0 theo thời gian
+
 export function usePigState(trashInfo, petType = 'pig') {
   const { t } = useTranslation()
   const [mode, setMode] = useState('idle')
   const [bubble, setBubble] = useState(null)
-  const [pigScale, setPigScale] = useState(1.0)
+  const [pigBaseScale, setPigBaseScale] = useState(1.0)   // do slider set
+  const [pigEatenScale, setPigEatenScale] = useState(0.0) // tăng khi ăn
   const [totalEaten, setTotalEaten] = useState(0) // in KB
   const [cameraFollowsPig, setCameraFollowsPig] = useState(true)
   const [unlimitedPigSize, setUnlimitedPigSize] = useState(false)
-  const [explosionEvent, setExplosionEvent] = useState(null) // { id } khi vừa "nổ" tách nhỏ, null khi bình thường
+  const [explosionEvent, setExplosionEvent] = useState(null)
   const [followers, setFollowers] = useState([])
 
-  const scaleRef = useRef(1.0)
+  const baseScaleRef = useRef(1.0)
+  const eatenScaleRef = useRef(0.0)
   const eatenRef = useRef(0)
   const unlimitedRef = useRef(false)
   const followersRef = useRef([])
 
   // Keep refs in sync
-  useEffect(() => { scaleRef.current = pigScale }, [pigScale])
+  useEffect(() => { baseScaleRef.current = pigBaseScale }, [pigBaseScale])
+  useEffect(() => { eatenScaleRef.current = pigEatenScale }, [pigEatenScale])
   useEffect(() => { eatenRef.current = totalEaten }, [totalEaten])
   useEffect(() => { unlimitedRef.current = unlimitedPigSize }, [unlimitedPigSize])
   useEffect(() => { followersRef.current = followers }, [followers])
 
+  // pigScale hiện tại = base + eaten
+  const pigScale = pigBaseScale + pigEatenScale
+
   const reloadSettings = async () => {
     if (window.pigAPI) {
       const s = await window.pigAPI.getSettings()
-      if (s.pigScale) setPigScale(s.pigScale)
+      // pigBaseScale: ưu tiên field mới, fallback về pigScale cũ (clamp về 1.0)
+      if (s.pigBaseScale !== undefined && s.pigBaseScale !== null) {
+        setPigBaseScale(Math.min(s.pigBaseScale, 1.0))
+      } else if (s.pigScale !== undefined && s.pigScale !== null) {
+        // Migrate: pigScale cũ → pigBaseScale (clamp về [0.05, 1.0])
+        setPigBaseScale(Math.min(Math.max(s.pigScale, 0.05), 1.0))
+      }
+      // pigEatenScale: load nếu có, không thì 0
+      if (s.pigEatenScale !== undefined && s.pigEatenScale !== null) {
+        setPigEatenScale(Math.max(0, s.pigEatenScale))
+      }
       if (s.totalEaten) setTotalEaten(s.totalEaten)
       if (s.cameraFollowsPig !== undefined) setCameraFollowsPig(s.cameraFollowsPig)
       if (s.unlimitedPigSize !== undefined) setUnlimitedPigSize(s.unlimitedPigSize)
@@ -55,14 +75,22 @@ export function usePigState(trashInfo, petType = 'pig') {
     reloadSettings()
   }, [])
 
-  // 2. Heo mẹ tự giảm kích thước dần theo thời gian (0.001/giây, không dưới mức mặc định 1.0).
-  // Heo con (followers) KHÔNG bị giảm — scale của chúng chỉ tăng khi ăn (xem pigletGrowths bên dưới).
+  // 2. Shrink: chỉ giảm pigEatenScale (phần ăn được), không đụng pigBaseScale.
+  // pigEatenScale giảm 0.001/giây, sàn là 0.
   useEffect(() => {
     const shrinkInterval = setInterval(() => {
-      setPigScale(prev => {
-        if (isNaN(prev)) return 1.0;
-        return Math.max(1.0, prev - 0.001)
+      setPigEatenScale(prev => {
+        if (isNaN(prev) || prev <= 0) return 0
+        // Tốc độ giảm tỉ lệ thuận với base (nhỏ giảm chậm) và lượng ăn (ăn nhiều giảm nhanh)
+        const shrinkRate = (baseScaleRef.current * 0.001) + (prev * 0.0002)
+        return Math.max(0, prev - shrinkRate)
       })
+
+      setFollowers(prev => prev.map(f => {
+        // Tạm thời chỉ đảm bảo dữ liệu f không bị lỗi, không trừ eatenScale
+        if (!f.eatenScale || f.eatenScale <= 0) return f
+        return f
+      }))
     }, 1000)
     return () => clearInterval(shrinkInterval)
   }, [])
@@ -72,8 +100,14 @@ export function usePigState(trashInfo, petType = 'pig') {
     if (!window.pigAPI) return
     const saveInterval = setInterval(async () => {
       const s = await window.pigAPI.getSettings()
-      if (s.pigScale !== scaleRef.current || s.totalEaten !== eatenRef.current || JSON.stringify(s.followers) !== JSON.stringify(followersRef.current)) {
-        s.pigScale = scaleRef.current
+      if (
+        s.pigBaseScale !== baseScaleRef.current ||
+        s.pigEatenScale !== eatenScaleRef.current ||
+        s.totalEaten !== eatenRef.current ||
+        JSON.stringify(s.followers) !== JSON.stringify(followersRef.current)
+      ) {
+        s.pigBaseScale = baseScaleRef.current
+        s.pigEatenScale = eatenScaleRef.current
         s.totalEaten = eatenRef.current
         s.followers = followersRef.current
         await window.pigAPI.saveSettings(s)
@@ -197,15 +231,13 @@ export function usePigState(trashInfo, petType = 'pig') {
     return () => clearInterval(interval)
   }, [mode, petType])
 
-  // Hành động ăn
+  // Hành động ăn — tăng pigEatenScale, không đụng pigBaseScale
   const triggerEat = useCallback((freedKB) => {
     setMode('eating')
 
     const growth = freedKB > 0
       ? 0.05 + Math.min(1.5, Math.log10(1 + freedKB) * 0.06)
       : 0
-
-    const EXPLODE_THRESHOLD = 5.0
 
     const totalEntities = 1 + followersRef.current.length
     let randomWeights = Array.from({ length: totalEntities }).map(() => Math.random() + 0.1)
@@ -215,36 +247,43 @@ export function usePigState(trashInfo, petType = 'pig') {
     const motherGrowth = growth * randomWeights[0]
     const pigletGrowths = randomWeights.slice(1).map(w => growth * w)
 
-    let nextMotherScale = scaleRef.current + (isNaN(motherGrowth) ? 0 : motherGrowth)
-    let exploded = false;
+    let nextEatenScale = eatenScaleRef.current + (isNaN(motherGrowth) ? 0 : motherGrowth)
+    let exploded = false
+    // totalScaleAtBirth dùng để tính size heo con (dựa vào base, không phải tổng)
+    const baseAtBirth = baseScaleRef.current
+
+    // Ngưỡng nổ cố định: pigEatenScale >= 4.0 (400%) bất kể base bao nhiêu
+    const EATEN_EXPLODE_THRESHOLD = 4.0
 
     if (unlimitedRef.current) {
-      if (isNaN(nextMotherScale)) nextMotherScale = 1.0;
-      if (nextMotherScale >= EXPLODE_THRESHOLD) {
-        exploded = true;
-        nextMotherScale = 1.0;
+      if (isNaN(nextEatenScale)) nextEatenScale = 0
+      if (nextEatenScale >= EATEN_EXPLODE_THRESHOLD) {
+        exploded = true
+        // Reset phần eaten về 0 sau khi nổ
+        nextEatenScale = 0
       }
     } else {
-      nextMotherScale = isNaN(nextMotherScale) ? 1.0 : Math.min(nextMotherScale, 2.5)
+      // Không unlimited: giới hạn eaten ở 1.5 (150% bonus tối đa), không nổ
+      nextEatenScale = isNaN(nextEatenScale) ? 0 : Math.min(nextEatenScale, 1.5)
     }
 
-    setPigScale(nextMotherScale)
+    setPigEatenScale(nextEatenScale)
 
     if (exploded) {
       setExplosionEvent({ id: Date.now() })
     }
 
-    setFollowers(fc => {
-      let updated = fc.map((f, i) => ({
+    setFollowers(prev => {
+      let updated = prev.map((f, idx) => ({
         ...f,
-        scale: f.scale + (pigletGrowths[i] || 0)
+        eatenScale: (f.eatenScale || 0) + (pigletGrowths[idx] || 0)
       }))
 
       if (exploded) {
-        // Sinh heo con mới kèm màu ngẫu nhiên
         const newPiglets = Array.from({ length: 8 }).map(() => ({
           id: Math.random().toString(),
-          scale: 0.4,
+          relativeScale: 0.2, // 20% size mẹ
+          eatenScale: 0,
           hue: getRandomHue()
         }))
         updated = [...updated, ...newPiglets].slice(0, 24)
@@ -296,5 +335,40 @@ export function usePigState(trashInfo, petType = 'pig') {
     setTimeout(() => setBubble(null), 4000)
   }
 
-  return { mode, bubble, pigScale, totalEaten, cameraFollowsPig, reloadSettings, triggerEat, setMode, forceBubble, explosionEvent, clearExplosionEvent: () => setExplosionEvent(null), followers }
+  // Set pigBaseScale (slider) và lưu ngay — pigEatenScale không bị ảnh hưởng.
+  // Heo con scale theo tỉ lệ thay đổi của base.
+  const setPigScaleAndSave = async (newBase) => {
+    const clampedBase = Math.min(Math.max(newBase, 0.05), 1.0)
+    const oldBase = baseScaleRef.current || 1
+    const ratio = oldBase > 0 ? clampedBase / oldBase : 1
+    const scaledFollowers = followersRef.current.map(f => ({ ...f, scale: Math.max(0.05, f.scale * ratio) }))
+
+    setPigBaseScale(clampedBase)
+    setFollowers(scaledFollowers)
+
+    if (window.pigAPI) {
+      const s = await window.pigAPI.getSettings()
+      s.pigBaseScale = clampedBase
+      s.pigEatenScale = eatenScaleRef.current
+      s.followers = scaledFollowers
+      await window.pigAPI.saveSettings(s)
+    }
+  }
+
+  // Reset pigBaseScale về 1.0 (mặc định), pigEatenScale giữ nguyên
+  const resetPigScale = async () => {
+    await setPigScaleAndSave(1.0)
+  }
+
+  return {
+    mode, bubble,
+    pigScale,       // tổng = base + eaten, dùng để render
+    pigBaseScale,   // phần slider set (0.05-1.0)
+    pigEatenScale,  // phần tăng do ăn
+    setPigScale: setPigScaleAndSave,
+    resetPigScale,
+    totalEaten, cameraFollowsPig, reloadSettings, triggerEat, setMode, forceBubble,
+    explosionEvent, clearExplosionEvent: () => setExplosionEvent(null),
+    followers
+  }
 }

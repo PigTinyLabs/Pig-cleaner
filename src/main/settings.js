@@ -15,7 +15,9 @@ const DEFAULTS = {
   // Which categories to include when user manually triggers "clean all"
   manualCleanCategories: ['trash', 'system', 'temp', 'npm', 'yarn', 'brew'],
   // Persistent pig state
-  pigScale: 1.0,
+  pigBaseScale: 1.0,    // do slider set (0.05-1.0), kích thước nền
+  pigEatenScale: 0.0,   // tăng khi ăn rác, giảm dần về 0 theo thời gian
+  pigScale: 1.0,        // legacy - dùng để migrate, thực tế = pigBaseScale + pigEatenScale
   totalEaten: 0,
   // Display mode: 'always-on-top' or 'desktop'
   displayMode: 'always-on-top',

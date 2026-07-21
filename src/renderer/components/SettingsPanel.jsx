@@ -11,8 +11,9 @@ const INTERVAL_OPTIONS = [
   { value: 360, label: '6 tiếng' },
 ]
 
-export default function SettingsPanel({ onClose }) {
+export default function SettingsPanel({ onClose, pigScale = 1.0, pigEatenScale = 0, onChangePigScale, onResetPigScale }) {
   const { t, i18n } = useTranslation()
+  const [scaleInput, setScaleInput] = useState(pigScale)
   const [settings, setSettings] = useState({
     autoCleanInterval: 0,
     autoCleanCategories: ['trash', 'temp'],
@@ -103,7 +104,11 @@ export default function SettingsPanel({ onClose }) {
   const handleSave = async () => {
     setSaving(true)
     if (isElectron) {
-      await window.pigAPI.saveSettings(settings)
+      // QUAN TRỌNG: loại bỏ pigScale, pigBaseScale, pigEatenScale khỏi payload lưu ở đây.
+      // Đây là bản chụp lúc MỞ panel (không được cập nhật khi kéo slider), nếu gửi nguyên
+      // sẽ ĐÈ lên giá trị đúng đã được setPigScaleAndSave() lưu riêng ngay lúc kéo.
+      const { pigScale: _s1, pigBaseScale: _s2, pigEatenScale: _s3, ...settingsToSave } = settings
+      await window.pigAPI.saveSettings(settingsToSave)
     }
     setSaving(false)
     onClose()
@@ -124,202 +129,263 @@ export default function SettingsPanel({ onClose }) {
           <button className="cache-close-btn" onClick={handleCancel}>✕</button>
         </div>
 
-        <div className="settings-content">
-          <div className="settings-section">
-            <div className="settings-section-title">🌐 {t('settingsPanel.language')}</div>
-            <select 
-              className="settings-select"
-              value={settings.language || 'en'}
-              onChange={e => {
-                const newLang = e.target.value
-                setSettings(prev => ({ ...prev, language: newLang }))
-                i18n.changeLanguage(newLang)
-              }}
-            >
-              <option value="en">{t('settingsPanel.english')}</option>
-              <option value="vi">{t('settingsPanel.vietnamese')}</option>
-              <option value="ja">{t('settingsPanel.japanese')}</option>
-            </select>
-          </div>
+        <div className="settings-content" style={{ display: 'flex', flexDirection: 'row', gap: '16px', alignItems: 'flex-start' }}>
 
-          <div className="settings-section">
-            <div className="settings-section-title">🐾 {t('settingsPanel.petType', 'Pet Type')}</div>
-            <select 
-              className="settings-select"
-              value={settings.petType || 'pig'}
-              onChange={e => setSettings(prev => ({ ...prev, petType: e.target.value }))}
-            >
-              <option value="pig">{t('settingsPanel.pig', 'Heo (Pig)')}</option>
-              <option value="duck">{t('settingsPanel.duck', 'Vịt (Duck)')}</option>
-            </select>
-          </div>
+          {/* ── CỘT TRÁI: Kích thước + Hiệu ứng ── */}
+          <div style={{ flex: '1 1 0', minWidth: 0 }}>
 
-          <div className="settings-section">
-            <div className="settings-section-title">🔊 {t('settingsPanel.sound', 'Âm thanh (Sound)')}</div>
-            <label className="cache-item">
-              <input
-                type="checkbox"
-                checked={settings.soundEnabled === true}
-                onChange={e => setSettings(prev => ({ ...prev, soundEnabled: e.target.checked }))}
-              />
-              <span className="cache-item-label">{t('settingsPanel.soundEnabled', 'Bật tiếng kêu khi dọn rác (Enable sound on clean)')}</span>
-            </label>
-          </div>
-
-          <div className="settings-section">
-            <div className="settings-section-title">🕒 {t('settingsPanel.autoClean')}</div>
-            <select 
-              className="settings-select"
-              value={settings.autoCleanInterval}
-              onChange={e => setSettings(prev => ({ ...prev, autoCleanInterval: parseInt(e.target.value) }))}
-            >
-              <option value={0}>{t('settingsPanel.never')}</option>
-              <option value={30}>{t('settingsPanel.every30m')}</option>
-              <option value={60}>{t('settingsPanel.every1h')}</option>
-              <option value={120}>{t('settingsPanel.every2h')}</option>
-              <option value={240}>{t('settingsPanel.every4h')}</option>
-              <option value={480}>{t('settingsPanel.every8h')}</option>
-            </select>
-          </div>
-
-          <div className="settings-section">
-            <div className="settings-section-title">🖥️ {t('settingsPanel.displayMode')}</div>
-            <select 
-              className="settings-select"
-              value={settings.displayMode || 'always-on-top'}
-              onChange={e => setSettings(prev => ({ ...prev, displayMode: e.target.value }))}
-            >
-              <option value="always-on-top">{t('settingsPanel.alwaysOnTop')}</option>
-              <option value="desktop">{t('settingsPanel.desktopOnly')}</option>
-            </select>
-          </div>
-
-          {isElectron && (
             <div className="settings-section">
-              <div className="settings-section-title">🚀 {t('settingsPanel.startup')}</div>
+              <div className="settings-section-title">📏 {t('settingsPanel.pigSize', 'Kích thước')}</div>
+              <div style={{ fontSize: '13px', fontWeight: 500, marginBottom: '6px', color: '#fff' }}>
+                {t('settingsPanel.baseSize', 'Kích thước nền')}:
+                {' '}<span style={{ color: '#f0c' }}>{Math.round(scaleInput * 100)}%</span>
+                {scaleInput < 1.0 && <span style={{ color: '#ccc', fontSize: '12px' }}> — nhỏ hơn mặc định</span>}
+                {scaleInput >= 1.0 && <span style={{ color: '#8f8', fontSize: '12px' }}> — mặc định</span>}
+              </div>
+              <input
+                type="range"
+                className="settings-select"
+                min={0.05}
+                max={1.0}
+                step={0.05}
+                value={Math.min(scaleInput, 1.0)}
+                onChange={e => {
+                  const val = parseFloat(e.target.value)
+                  setScaleInput(val)
+                  onChangePigScale?.(val)
+                }}
+                style={{ width: '100%' }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', opacity: 0.5, marginTop: '2px' }}>
+                <span>5% (nhỏ nhất)</span>
+                <span style={{ fontWeight: 'bold', opacity: 1 }}>100% (mặc định)</span>
+              </div>
+              {pigEatenScale > 0.001 && (
+                <div style={{ fontSize: '12px', marginTop: '6px', padding: '5px 10px', background: 'rgba(255,180,0,0.12)', borderRadius: '6px', color: '#f9c' }}>
+                  🍔 +{Math.round(pigEatenScale * 100)}% bonus từ ăn rác — tự giảm dần
+                  {' '}→ tổng {Math.round((scaleInput + pigEatenScale) * 100)}%
+                </div>
+              )}
+              <button
+                className="cache-clean-btn"
+                style={{ marginTop: '6px', background: '#555', fontSize: '12px', padding: '5px 14px', width: 'auto' }}
+                onClick={() => {
+                  setScaleInput(1.0)
+                  onResetPigScale?.()
+                }}
+              >
+                🔄 {t('settingsPanel.resetSize', 'Reset về mặc định (x1.0)')}
+              </button>
+            </div>
+
+            <div className="settings-section">
+              <div className="settings-section-title">☁️ {t('settingsPanel.effects')}</div>
               <label className="cache-item">
                 <input
                   type="checkbox"
-                  checked={settings.openAtLogin === true}
-                  onChange={e => setSettings(prev => ({ ...prev, openAtLogin: e.target.checked }))}
+                  checked={settings.cameraFollowsPig !== false}
+                  onChange={e => setSettings(prev => ({ ...prev, cameraFollowsPig: e.target.checked }))}
                 />
-                <span className="cache-item-label">
-                  {t('settingsPanel.openAtLogin')}
-                </span>
+                <span className="cache-item-label">{t('settingsPanel.cameraFollow', { pet: petLabel })}</span>
+              </label>
+              <label className="cache-item">
+                <input
+                  type="checkbox"
+                  checked={settings.weatherEffects !== false}
+                  onChange={e => setSettings(prev => ({ ...prev, weatherEffects: e.target.checked }))}
+                />
+                <span className="cache-item-label">{t('settingsPanel.realisticWeather')}</span>
+              </label>
+              <label className="cache-item">
+                <input
+                  type="checkbox"
+                  checked={settings.weatherAlerts !== false}
+                  onChange={e => setSettings(prev => ({ ...prev, weatherAlerts: e.target.checked }))}
+                />
+                <span className="cache-item-label">{t('settingsPanel.weatherReaction', { pet: petLabel })}</span>
+              </label>
+              <label className="cache-item">
+                <input
+                  type="checkbox"
+                  checked={settings.poolMode === true}
+                  onChange={e => setSettings(prev => ({ ...prev, poolMode: e.target.checked }))}
+                />
+                <span className="cache-item-label">{t('settingsPanel.pool')}</span>
+              </label>
+              <label className="cache-item">
+                <input
+                  type="checkbox"
+                  checked={settings.unlimitedPigSize === true}
+                  onChange={e => setSettings(prev => ({ ...prev, unlimitedPigSize: e.target.checked }))}
+                />
+                <span className="cache-item-label">{t('settingsPanel.unlimitedPigSize', { pet: petLabel, defaultValue: 'Pig grows unlimitedly when eating trash' })}</span>
               </label>
             </div>
-          )}
 
-          <div className="settings-section">
-            <div className="settings-section-title">🗂️ {t('settingsPanel.cleanItemsList', 'Clean these items')}</div>
-            <div className="cache-list" style={{ maxHeight: '200px' }}>
-              {categories.map(cat => (
-                <label key={cat.id} className="cache-item">
+          </div>
+
+          {/* ── CỘT GIỮA: Ngôn ngữ, Pet, Âm thanh, Auto Clean, Display, Startup ── */}
+          <div style={{ flex: '1 1 0', minWidth: 0 }}>
+
+            <div className="settings-section">
+              <div className="settings-section-title">🌐 {t('settingsPanel.language')}</div>
+              <select
+                className="settings-select"
+                value={settings.language || 'en'}
+                onChange={e => {
+                  const newLang = e.target.value
+                  setSettings(prev => ({ ...prev, language: newLang }))
+                  i18n.changeLanguage(newLang)
+                }}
+              >
+                <option value="en">{t('settingsPanel.english')}</option>
+                <option value="vi">{t('settingsPanel.vietnamese')}</option>
+                <option value="ja">{t('settingsPanel.japanese')}</option>
+              </select>
+            </div>
+
+            <div className="settings-section">
+              <div className="settings-section-title">🐾 {t('settingsPanel.petType', 'Pet Type')}</div>
+              <select
+                className="settings-select"
+                value={settings.petType || 'pig'}
+                onChange={e => setSettings(prev => ({ ...prev, petType: e.target.value }))}
+              >
+                <option value="pig">{t('settingsPanel.pig', 'Heo (Pig)')}</option>
+                <option value="duck">{t('settingsPanel.duck', 'Vịt (Duck)')}</option>
+              </select>
+            </div>
+
+            <div className="settings-section">
+              <div className="settings-section-title">🔊 {t('settingsPanel.sound', 'Âm thanh (Sound)')}</div>
+              <label className="cache-item">
+                <input
+                  type="checkbox"
+                  checked={settings.soundEnabled === true}
+                  onChange={e => setSettings(prev => ({ ...prev, soundEnabled: e.target.checked }))}
+                />
+                <span className="cache-item-label">{t('settingsPanel.soundEnabled', 'Bật tiếng kêu khi dọn rác (Enable sound on clean)')}</span>
+              </label>
+            </div>
+
+            <div className="settings-section">
+              <div className="settings-section-title">🕒 {t('settingsPanel.autoClean')}</div>
+              <select
+                className="settings-select"
+                value={settings.autoCleanInterval}
+                onChange={e => setSettings(prev => ({ ...prev, autoCleanInterval: parseInt(e.target.value) }))}
+              >
+                <option value={0}>{t('settingsPanel.never')}</option>
+                <option value={30}>{t('settingsPanel.every30m')}</option>
+                <option value={60}>{t('settingsPanel.every1h')}</option>
+                <option value={120}>{t('settingsPanel.every2h')}</option>
+                <option value={240}>{t('settingsPanel.every4h')}</option>
+                <option value={480}>{t('settingsPanel.every8h')}</option>
+              </select>
+            </div>
+
+            <div className="settings-section">
+              <div className="settings-section-title">🖥️ {t('settingsPanel.displayMode')}</div>
+              <select
+                className="settings-select"
+                value={settings.displayMode || 'always-on-top'}
+                onChange={e => setSettings(prev => ({ ...prev, displayMode: e.target.value }))}
+              >
+                <option value="always-on-top">{t('settingsPanel.alwaysOnTop')}</option>
+                <option value="desktop">{t('settingsPanel.desktopOnly')}</option>
+              </select>
+            </div>
+
+            {isElectron && (
+              <div className="settings-section">
+                <div className="settings-section-title">🚀 {t('settingsPanel.startup')}</div>
+                <label className="cache-item">
                   <input
                     type="checkbox"
-                    checked={settings.autoCleanCategories.includes(cat.id)}
-                    onChange={() => handleToggleCategory(cat.id)}
+                    checked={settings.openAtLogin === true}
+                    onChange={e => setSettings(prev => ({ ...prev, openAtLogin: e.target.checked }))}
                   />
-                  <span className="cache-item-label">{t(`cacheCategories.${cat.id}`, cat.label)}</span>
+                  <span className="cache-item-label">
+                    {t('settingsPanel.openAtLogin')}
+                  </span>
                 </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="settings-section">
-            <div className="settings-section-title">📍 {t('settingsPanel.weatherLocation', 'Weather location')}</div>
-            <div style={{ fontSize: '13px', color: '#888', marginBottom: '8px' }}>
-              {t('settingsPanel.currentLocation', 'Current')}: {settings.weatherLocation
-                ? `${settings.weatherLocation.city} (${t('settingsPanel.manual', 'manual')})`
-                : `${t('settingsPanel.autoIP', 'Auto by IP')} (${autoCity || t('settingsPanel.loading', 'loading...')})`}
-            </div>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <input
-                type="text"
-                className="settings-select"
-                style={{ flex: 1 }}
-                placeholder={t('settingsPanel.enterCity', 'Enter city name...')}
-                value={locationQuery}
-                onChange={e => setLocationQuery(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSearchLocation()}
-              />
-              <button
-                className="cache-clean-btn"
-                style={{ width: 'auto', padding: '0 14px' }}
-                onClick={handleSearchLocation}
-                disabled={searchingLocation}
-              >
-                {searchingLocation ? '...' : t('settingsPanel.search', 'Search')}
-              </button>
-            </div>
-            {locationResults.length > 0 && (
-              <div className="cache-list" style={{ maxHeight: '150px', marginTop: '6px' }}>
-                {locationResults.map((loc, i) => (
-                  <div
-                    key={i}
-                    className="cache-item"
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => handleSelectLocation(loc)}
-                  >
-                    <span className="cache-item-label">📍 {loc.label}</span>
-                  </div>
-                ))}
               </div>
             )}
-            {settings.weatherLocation && (
-              <button
-                className="cache-clean-btn"
-                style={{ marginTop: '6px', background: '#999' }}
-                onClick={handleUseAutoLocation}
-              >
-                {t('settingsPanel.useAutoLocation', 'Use automatic location (IP)')}
-              </button>
-            )}
+
           </div>
 
-          <div className="settings-section">
-            <div className="settings-section-title">☁️ {t('settingsPanel.effects')}</div>
-            <label className="cache-item">
-              <input
-                type="checkbox"
-                checked={settings.cameraFollowsPig !== false}
-                onChange={e => setSettings(prev => ({ ...prev, cameraFollowsPig: e.target.checked }))}
-              />
-              <span className="cache-item-label">{t('settingsPanel.cameraFollow', { pet: petLabel })}</span>
-            </label>
-            <label className="cache-item">
-              <input
-                type="checkbox"
-                checked={settings.weatherEffects !== false}
-                onChange={e => setSettings(prev => ({ ...prev, weatherEffects: e.target.checked }))}
-              />
-              <span className="cache-item-label">{t('settingsPanel.realisticWeather')}</span>
-            </label>
-            <label className="cache-item">
-              <input
-                type="checkbox"
-                checked={settings.weatherAlerts !== false}
-                onChange={e => setSettings(prev => ({ ...prev, weatherAlerts: e.target.checked }))}
-              />
-              <span className="cache-item-label">{t('settingsPanel.weatherReaction', { pet: petLabel })}</span>
-            </label>
-            <label className="cache-item">
-              <input
-                type="checkbox"
-                checked={settings.poolMode === true}
-                onChange={e => setSettings(prev => ({ ...prev, poolMode: e.target.checked }))}
-              />
-              <span className="cache-item-label">{t('settingsPanel.pool')}</span>
-            </label>
-            <label className="cache-item">
-              <input
-                type="checkbox"
-                checked={settings.unlimitedPigSize === true}
-                onChange={e => setSettings(prev => ({ ...prev, unlimitedPigSize: e.target.checked }))}
-              />
-              <span className="cache-item-label">{t('settingsPanel.unlimitedPigSize', { pet: petLabel, defaultValue: 'Pig grows unlimitedly when eating trash' })}</span>
-            </label>
+          {/* ── CỘT PHẢI: Danh sách dọn + Vị trí thời tiết ── */}
+          <div style={{ flex: '1 1 0', minWidth: 0 }}>
+
+            <div className="settings-section">
+              <div className="settings-section-title">🗂️ {t('settingsPanel.cleanItemsList', 'Clean these items')}</div>
+              <div className="cache-list" style={{ maxHeight: '200px' }}>
+                {categories.map(cat => (
+                  <label key={cat.id} className="cache-item">
+                    <input
+                      type="checkbox"
+                      checked={settings.autoCleanCategories.includes(cat.id)}
+                      onChange={() => handleToggleCategory(cat.id)}
+                    />
+                    <span className="cache-item-label">{t(`cacheCategories.${cat.id}`, cat.label)}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="settings-section">
+              <div className="settings-section-title">📍 {t('settingsPanel.weatherLocation', 'Weather location')}</div>
+              <div style={{ fontSize: '13px', color: '#888', marginBottom: '8px' }}>
+                {t('settingsPanel.currentLocation', 'Current')}: {settings.weatherLocation
+                  ? `${settings.weatherLocation.city} (${t('settingsPanel.manual', 'manual')})`
+                  : `${t('settingsPanel.autoIP', 'Auto by IP')} (${autoCity || t('settingsPanel.loading', 'loading...')})`}
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <input
+                  type="text"
+                  className="settings-select"
+                  style={{ flex: 1 }}
+                  placeholder={t('settingsPanel.enterCity', 'Enter city name...')}
+                  value={locationQuery}
+                  onChange={e => setLocationQuery(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSearchLocation()}
+                />
+                <button
+                  className="cache-clean-btn"
+                  style={{ width: 'auto', padding: '0 14px' }}
+                  onClick={handleSearchLocation}
+                  disabled={searchingLocation}
+                >
+                  {searchingLocation ? '...' : t('settingsPanel.search', 'Search')}
+                </button>
+              </div>
+              {locationResults.length > 0 && (
+                <div className="cache-list" style={{ maxHeight: '150px', marginTop: '6px' }}>
+                  {locationResults.map((loc, i) => (
+                    <div
+                      key={i}
+                      className="cache-item"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => handleSelectLocation(loc)}
+                    >
+                      <span className="cache-item-label">📍 {loc.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {settings.weatherLocation && (
+                <button
+                  className="cache-clean-btn"
+                  style={{ marginTop: '6px', background: '#999' }}
+                  onClick={handleUseAutoLocation}
+                >
+                  {t('settingsPanel.useAutoLocation', 'Use automatic location (IP)')}
+                </button>
+              )}
+            </div>
+
           </div>
+
         </div>
 
         <button className="cache-clean-btn" onClick={handleSave} disabled={saving}>

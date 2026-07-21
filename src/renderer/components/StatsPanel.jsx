@@ -10,12 +10,16 @@ function formatBytes(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(precision)) + ' ' + sizes[i]
 }
 
-export default function StatsPanel({ trashInfo, cacheInfo = [], totalEaten, pigScale, weather, petType = 'pig', onClose }) {
+export default function StatsPanel({ trashInfo, cacheInfo = [], totalEaten, pigScale, pigBaseScale, pigEatenScale = 0, weather, petType = 'pig', onClose }) {
   const { t } = useTranslation()
   const petLabel = t(petType === 'duck' ? 'settingsPanel.duck' : 'settingsPanel.pig')
   const petEmoji = petType === 'duck' ? '🦆' : '🐽'
   const totalCacheBytes = cacheInfo.reduce((s, c) => s + (c.sizeBytes || 0), 0)
   const totalRac = (trashInfo?.sizeBytes || 0) + totalCacheBytes
+
+  // Tính % hiển thị: base là mốc 100%, phần ăn là bonus %
+  const basePercent = Math.round((pigBaseScale ?? pigScale) * 100)
+  const eatenPercent = Math.round(pigEatenScale * 100)
 
   return (
     <>
@@ -58,7 +62,12 @@ export default function StatsPanel({ trashInfo, cacheInfo = [], totalEaten, pigS
         </div>
         <div className="stats-row">
           <span>📏 {t('statsPanel.pigSize', { pet: petLabel })}</span>
-          <strong>{Math.round((pigScale - 1) * 100 + 100)}%</strong>
+          <strong title={`base=${pigBaseScale?.toFixed(3)} eaten=${pigEatenScale?.toFixed(3)}`}>
+            {eatenPercent > 0
+              ? <>{basePercent}% <span style={{ color: '#f9c', fontSize: 11 }}>+{eatenPercent}%🍔</span></>
+              : <>{basePercent}%</>
+            }
+          </strong>
         </div>
         <div style={{ marginTop: 10, fontSize: 11, color: '#999', textAlign: 'center' }}>
           {t('statsPanel.clickToEat', { pet: petLabel, emoji: petEmoji })}
