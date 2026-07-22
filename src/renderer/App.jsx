@@ -9,6 +9,7 @@ import WeatherEffects from './components/WeatherEffects'
 import { usePigState } from './hooks/usePigState'
 import { useWeather } from './hooks/useWeather'
 import { useTranslation } from 'react-i18next'
+import { playLocalAudio } from './utils/playLocalAudio'
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -52,7 +53,7 @@ function App() {
   const [permissionWarning, setPermissionWarning] = useState(false)
   const [isCleaning, setIsCleaning] = useState(false)
   const [isSuspended, setIsSuspended] = useState(false)
-  const [weatherSettings, setWeatherSettings] = useState({ weatherEffects: true, weatherAlerts: true, poolMode: false, petType: 'pig', soundEnabled: false })
+  const [weatherSettings, setWeatherSettings] = useState({ weatherEffects: true, weatherAlerts: true, poolMode: false, petType: 'pig', soundEnabled: false, petSounds: null })
 
   const { mode, bubble, pigScale, pigBaseScale, pigEatenScale, setPigScale, resetPigScale, totalEaten, cameraFollowsPig, reloadSettings, triggerEat, setMode, forceBubble, explosionEvent, clearExplosionEvent, followers, spawnPiglet, clearPiglets } = usePigState(trashInfo, weatherSettings.petType)
   const isPanelOpen = showStats || showCache || showSettings || permissionWarning
@@ -81,6 +82,7 @@ function App() {
           poolMode: s.poolMode === true,
           petType: s.petType || 'pig',
           soundEnabled: s.soundEnabled === true,
+          petSounds: s.petSounds || null,
         })
         if (s.language) {
           i18n.changeLanguage(s.language)
@@ -100,11 +102,26 @@ function App() {
           poolMode: s.poolMode === true,
           petType: s.petType || 'pig',
           soundEnabled: s.soundEnabled === true,
+          petSounds: s.petSounds || null,
         })
         if (s.language && s.language !== i18n.language) {
           i18n.changeLanguage(s.language)
         }
       })
+    }
+  }
+
+  // Helper phát âm thanh tuỳ chỉnh cho thú cưng hiện tại
+  const playPetSound = async (soundKey, fallbackSrc = null) => {
+    if (!weatherSettings.soundEnabled) return
+    const customPath = weatherSettings.petSounds?.[weatherSettings.petType]?.[soundKey]
+    if (customPath) {
+      await playLocalAudio(customPath)
+    } else if (fallbackSrc) {
+      try {
+        const audio = new Audio(fallbackSrc)
+        await audio.play()
+      } catch {}
     }
   }
 
@@ -153,6 +170,7 @@ function App() {
     const handleLightning = () => {
       setMode('scared')
       forceBubble(t('weather.scared'))
+      playPetSound('scared')
       setTimeout(() => setMode('idle'), 2000)
     }
     window.addEventListener('lightning-strike', handleLightning)
@@ -182,6 +200,7 @@ function App() {
           ? '🐦 Dám bắt vịt con của tao à? Trả thù cho con!'
           : (weatherSettings.petType === 'dog' ? '🐦 Dám bắt chó con của tao à? Trả thù cho con!' : '🐦 Dám bắt heo con của tao à? Trả thù cho con!')
         forceBubble(t(key, def))
+        playPetSound('birdCatch')
       } else {
         forceBubble(t('fish.caught') || '🐟')
       }
@@ -332,15 +351,8 @@ function App() {
     setIsCleaning(true)
 
     // Play sound based on petType if enabled
-    if (weatherSettings.soundEnabled) {
-      try {
-        const soundSrc = weatherSettings.petType === 'duck' ? quackSound : oinkSound
-        const audio = new Audio(soundSrc)
-        audio.play().catch(e => console.log('Audio play failed:', e))
-      } catch (e) {
-        console.log('Audio error:', e)
-      }
-    }
+    const defaultEatSound = weatherSettings.petType === 'duck' ? quackSound : oinkSound
+    playPetSound('eating', defaultEatSound)
     
     if (isElectron) {
       try {
@@ -498,6 +510,7 @@ function App() {
           ...f,
           scale: (pigBaseScale * (f.relativeScale || 0.2)) + (f.eatenScale || 0) * 0.35
         }))}
+        onPlaySound={playPetSound}
       />
     </div>
   )

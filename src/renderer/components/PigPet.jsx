@@ -386,13 +386,50 @@ function DepartingPiglet({ piglet, onDone, petType }) {
 export const PIG_WIDTH = 150
 export const PIG_HEIGHT = 150
 
-export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = false, isCleaning = false, cameraFollowsPig, onDoubleClick, onWakeUp, weatherData = null, poolMode = false, petType = 'pig', explosionEvent = null, onExplosionDone, followers = [] }) {
+export default function PigPet({ mode, bubble, pigScale = 1.0, isPanelOpen = false, isCleaning = false, cameraFollowsPig, onDoubleClick, onWakeUp, weatherData = null, poolMode = false, petType = 'pig', explosionEvent = null, onExplosionDone, followers = [], onPlaySound }) {
   const { t } = useTranslation()
   const windRef = useRef(null)
 
   const {
     position, facing, isDragging, dragState, handleMouseEnter, handleMouseLeave, handleDragStart, handleDrag, handleDragEnd, wasDragged, isWallHit, dragVelocity, swimAction, isAboveWater, paleLevel, isSpaceFrozen
   } = usePigMovement(mode, isPanelOpen, windRef, pigScale, weatherData, poolMode)
+
+  // ─── Swimming sound ───
+  const swimSoundTimerRef = React.useRef(null)
+  React.useEffect(() => {
+    if (swimAction !== 'none' && onPlaySound) {
+      // Phát âm thanh bơi định kỳ mỗi 8 giây khi trong nước
+      if (swimSoundTimerRef.current) return // Đã có timer
+      swimSoundTimerRef.current = setInterval(() => {
+        onPlaySound('swimming')
+      }, 8000)
+    } else {
+      if (swimSoundTimerRef.current) {
+        clearInterval(swimSoundTimerRef.current)
+        swimSoundTimerRef.current = null
+      }
+    }
+    return () => {
+      if (swimSoundTimerRef.current) {
+        clearInterval(swimSoundTimerRef.current)
+        swimSoundTimerRef.current = null
+      }
+    }
+  }, [swimAction !== 'none'])
+
+  // ─── Random sound khi idle/walking ───
+  React.useEffect(() => {
+    if (!onPlaySound) return
+    // Phát âm thanh ngẫu nhiên mỗi 30-60 giây khi không có việc gì đặc biệt
+    const scheduleNext = () => Math.floor(30000 + Math.random() * 30000)
+    let timer = setTimeout(function tick() {
+      if (['idle', 'walking'].includes(mode) && swimAction === 'none') {
+        onPlaySound('random')
+      }
+      timer = setTimeout(tick, scheduleNext())
+    }, scheduleNext())
+    return () => clearTimeout(timer)
+  }, [!!onPlaySound])
 
   const handleClick = (e) => {
     if (!wasDragged() && !isDragging) {
