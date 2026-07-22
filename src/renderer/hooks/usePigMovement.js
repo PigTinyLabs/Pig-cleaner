@@ -186,6 +186,16 @@ export function usePigMovement(mode, isPanelOpen = false, windRef = null, pigSca
         setSwimAction('struggling')
         nextSwimChangeRef.current = performance.now() + 2000
         submergedTimeRef.current = 0
+
+        // Cún giãy giụa trượt khỏi tay người chơi nếu đang bị giữ
+        if (state.isDragging) {
+          state.isDragging = false
+          state.isMouseDown = false // Bắt buộc người chơi phải click lại mới bắt được
+          setIsDragging(false)
+          updateDragState(null)
+          state.vx = (Math.random() - 0.5) * 40 // Văng ra ngẫu nhiên
+          state.vy = (Math.random() - 0.5) * 40
+        }
       }
 
       if (state.isDragging && !lastIsDraggingRef.current) {
