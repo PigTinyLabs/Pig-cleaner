@@ -41,6 +41,12 @@ const DEFAULTS = {
   followers: [],
   // Tự khởi động cùng hệ điều hành (Windows/macOS)
   openAtLogin: false,
+  // Âm thanh tuỳ chỉnh theo từng loại thú cưng
+  petSounds: {
+    pig: { eating: null, birdCatch: null, random: null, swimming: null, scared: null },
+    duck: { eating: null, birdCatch: null, random: null, swimming: null, scared: null },
+    dog: { eating: null, birdCatch: null, random: null, swimming: null, scared: null },
+  },
 }
 
 function load() {
