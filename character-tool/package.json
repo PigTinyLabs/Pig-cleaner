@@ -2,6 +2,12 @@
   "name": "character-tool",
   "private": true,
   "version": "0.0.0",
+  "description": "Character Maker Tool for Pig Cleaner",
+  "author": "PigTinyLabs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PigTinyLabs/Pig-cleaner.git"
+  },
   "type": "module",
   "main": "main.js",
   "scripts": {
