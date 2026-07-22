@@ -347,6 +347,30 @@ ipcMain.handle('search-location', async (_, query) => {
   return await weatherService.searchLocation(query)
 })
 
+ipcMain.handle('select-sound-file', async () => {
+  const { dialog } = require('electron')
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Chọn file âm thanh',
+    properties: ['openFile'],
+    filters: [
+      { name: 'Audio Files', extensions: ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'] },
+      { name: 'All Files', extensions: ['*'] }
+    ]
+  })
+  if (result.canceled || result.filePaths.length === 0) return null
+  return result.filePaths[0]
+})
+
+ipcMain.handle('read-sound-file', async (_, filePath) => {
+  const fs = require('fs')
+  try {
+    const data = fs.readFileSync(filePath)
+    return data.toString('base64')
+  } catch {
+    return null
+  }
+})
+
 const gotTheLock = app.requestSingleInstanceLock()
 
 if (!gotTheLock) {

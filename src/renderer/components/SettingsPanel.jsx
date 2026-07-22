@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { playLocalAudio } from '../utils/playLocalAudio'
 
 const isElectron = typeof window !== 'undefined' && window.pigAPI
 
@@ -26,6 +27,11 @@ export default function SettingsPanel({ onClose, pigScale = 1.0, pigEatenScale =
     soundEnabled: false,
     language: i18n.language || 'en',
     openAtLogin: false,
+    petSounds: {
+      pig: { eating: null, birdCatch: null, random: null, swimming: null, scared: null },
+      duck: { eating: null, birdCatch: null, random: null, swimming: null, scared: null },
+      dog: { eating: null, birdCatch: null, random: null, swimming: null, scared: null },
+    },
   })
   const [categories, setCategories] = useState([])
   const [saving, setSaving] = useState(false)
@@ -99,6 +105,33 @@ export default function SettingsPanel({ onClose, pigScale = 1.0, pigEatenScale =
     setSettings(prev => ({ ...prev, weatherLocation: null }))
     setLocationResults([])
     setLocationQuery('')
+  }
+
+  const handleSelectSound = async (petType, soundKey) => {
+    if (!isElectron || !window.pigAPI.selectSoundFile) return
+    const filePath = await window.pigAPI.selectSoundFile()
+    if (!filePath) return
+    setSettings(prev => ({
+      ...prev,
+      petSounds: {
+        ...prev.petSounds,
+        [petType]: { ...(prev.petSounds?.[petType] || {}), [soundKey]: filePath }
+      }
+    }))
+  }
+
+  const handleClearSound = (petType, soundKey) => {
+    setSettings(prev => ({
+      ...prev,
+      petSounds: {
+        ...prev.petSounds,
+        [petType]: { ...(prev.petSounds?.[petType] || {}), [soundKey]: null }
+      }
+    }))
+  }
+
+  const handlePlaySound = async (filePath) => {
+    await playLocalAudio(filePath)
   }
 
   const handleSave = async () => {
@@ -290,9 +323,58 @@ export default function SettingsPanel({ onClose, pigScale = 1.0, pigEatenScale =
                   checked={settings.soundEnabled === true}
                   onChange={e => setSettings(prev => ({ ...prev, soundEnabled: e.target.checked }))}
                 />
-                <span className="cache-item-label">{t('settingsPanel.soundEnabled', 'Bật tiếng kêu khi dọn rác (Enable sound on clean)')}</span>
+                <span className="cache-item-label">{t('settingsPanel.soundEnabled', 'Bật âm thanh')}</span>
               </label>
+
+              {(() => {
+                const pet = settings.petType || 'pig'
+                const sounds = settings.petSounds?.[pet] || {}
+                const soundDefs = [
+                  { key: 'eating',    icon: '🍖', label: t('settingsPanel.soundEating', 'Đang ăn') },
+                  { key: 'birdCatch', icon: '🐦', label: t('settingsPanel.soundBirdCatch', 'Bắt được chim') },
+                  { key: 'random',    icon: '🎲', label: t('settingsPanel.soundRandom', 'Ngẫu nhiên') },
+                  { key: 'swimming',  icon: '🏊', label: t('settingsPanel.soundSwimming', 'Đang bơi') },
+                  { key: 'scared',    icon: '😱', label: t('settingsPanel.soundScared', 'Sợ hãi') },
+                ]
+                return (
+                  <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px', opacity: settings.soundEnabled ? 1 : 0.5 }}>
+                    {soundDefs.map(({ key, icon, label }) => {
+                      const filePath = sounds[key]
+                      const fileName = filePath ? filePath.split('/').pop().split('\\').pop() : null
+                      return (
+                        <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px' }}>
+                          <span style={{ minWidth: '18px' }}>{icon}</span>
+                          <span style={{ minWidth: '60px', color: '#ddd' }}>{label}</span>
+                          <span style={{ flex: 1, color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={filePath || ''}>
+                            {fileName || <span style={{ opacity: 0.4, fontStyle: 'italic' }}>{t('settingsPanel.soundDefault', 'mặc định')}</span>}
+                          </span>
+                          {filePath && (
+                            <button
+                              title={t('settingsPanel.soundPlay', 'Phát thử')}
+                              style={{ background: '#2a6', border: 'none', color: '#fff', borderRadius: '4px', padding: '2px 7px', cursor: 'pointer', fontSize: '13px', flexShrink: 0 }}
+                              onClick={() => handlePlaySound(filePath)}
+                            >▶</button>
+                          )}
+                          <button
+                            title={t('settingsPanel.soundChoose', 'Chọn file')}
+                            style={{ background: '#446', border: 'none', color: '#fff', borderRadius: '4px', padding: '2px 7px', cursor: 'pointer', fontSize: '13px', flexShrink: 0 }}
+                            onClick={() => handleSelectSound(pet, key)}
+                          >📂</button>
+                          {filePath && (
+                            <button
+                              title={t('settingsPanel.soundClear', 'Xoá')}
+                              style={{ background: '#633', border: 'none', color: '#fff', borderRadius: '4px', padding: '2px 6px', cursor: 'pointer', fontSize: '13px', flexShrink: 0 }}
+                              onClick={() => handleClearSound(pet, key)}
+                            >✕</button>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
             </div>
+
 
             <div className="settings-section">
               <div className="settings-section-title">🕒 {t('settingsPanel.autoClean')}</div>
