@@ -33,6 +33,8 @@ contextBridge.exposeInMainWorld('pigAPI', {
   // Weather
   getWeather: () => ipcRenderer.invoke('get-weather'),
   searchLocation: (query) => ipcRenderer.invoke('search-location', query),
+  selectSoundFile: () => ipcRenderer.invoke('select-sound-file'),
+  readSoundFile: (filePath) => ipcRenderer.invoke('read-sound-file', filePath),
 
   // Event listeners (Main → Renderer)
   onSpawnPiglet: (callback) => {
