@@ -38,7 +38,12 @@ const resources = {
       "removingSolidBg": "Removing solid background...",
       "removingSolidBgProgress": "Removing solid background for image {{current}}/{{total}}...",
       "autoAlignDone": "Auto aligned and added safe margin!",
+      "autoAligning": "Auto aligning all frames...",
+      "autoAlignError": "No images found to auto align!",
+      "erasingAll": "Applying eraser to all images...",
       "exporting": "Processing images for download...",
+      "removingAiBg": "Loading AI Model...",
+      "removingAiBgProgress": "Processing AI background for image {{current}}/{{total}}...",
       "language": "Language"
     }
   },
@@ -78,7 +83,12 @@ const resources = {
       "removingSolidBg": "Đang xoá nền đơn sắc...",
       "removingSolidBgProgress": "Đang xoá nền đơn sắc ảnh {{current}}/{{total}}...",
       "autoAlignDone": "Đã tự động căn giữa và thêm lề an toàn!",
+      "autoAligning": "Đang tự động căn giữa toàn bộ khung hình...",
+      "autoAlignError": "Không tìm thấy hình ảnh nào để căn giữa!",
+      "erasingAll": "Đang áp dụng tẩy cho tất cả ảnh...",
       "exporting": "Đang xử lý ảnh để tải về...",
+      "removingAiBg": "Đang tải Model AI...",
+      "removingAiBgProgress": "Đang tách nền ảnh {{current}}/{{total}}...",
       "language": "Ngôn ngữ"
     }
   }

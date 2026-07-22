@@ -141,7 +141,7 @@ function App() {
     if (!spriteSheetImageObj) return;
 
     setIsProcessing(true);
-    setGlobalProgress('Đang cắt ảnh...');
+    setGlobalProgress(t('slicing'));
 
     const imgWidth = spriteSheetImageObj.width;
     const imgHeight = spriteSheetImageObj.height;
@@ -285,7 +285,7 @@ function App() {
   const handleRemoveBackground = async () => {
     if (images.length === 0) return;
     setIsProcessing(true);
-    setGlobalProgress(t('removingAiBg', 'Đang tải Model AI...'));
+    setGlobalProgress(t('removingAiBg'));
 
     const historySnapshot = images.map(img => ({ ...img }));
     const updatedImages = [...images];
@@ -295,7 +295,7 @@ function App() {
 
       updatedImages[i].status = 'processing';
       setImages([...updatedImages]);
-      setGlobalProgress(t('removingAiBgProgress', { current: i + 1, total: updatedImages.length, defaultValue: `Đang tách nền ảnh ${i + 1}/${updatedImages.length}...` }));
+      setGlobalProgress(t('removingAiBgProgress', { current: i + 1, total: updatedImages.length }));
 
       try {
         const sourceUrl = img.processedUrl || img.originalUrl;
@@ -406,7 +406,7 @@ function App() {
     if (strokePath.current.length === 0) return;
     
     setIsProcessing(true);
-    setGlobalProgress('Đang áp dụng tẩy cho tất cả ảnh...');
+    setGlobalProgress(t('erasingAll'));
     
     const historySnapshot = images.map(img => ({ ...img }));
     const path = [...strokePath.current];
@@ -448,7 +448,7 @@ function App() {
   const handleAutoAlign = async () => {
     if (images.length === 0) return;
     setIsProcessing(true);
-    setGlobalProgress('Đang tự động căn giữa toàn bộ khung hình...');
+    setGlobalProgress(t('autoAligning'));
 
     const historySnapshot = images.map(img => ({ ...img }));
     let minX = Infinity, minY = Infinity, maxX = -1, maxY = -1;
@@ -483,7 +483,7 @@ function App() {
     }
 
     if (!hasPixels) {
-      setGlobalProgress('Không tìm thấy hình ảnh nào để căn giữa!');
+      setGlobalProgress(t('autoAlignError'));
       setTimeout(() => setGlobalProgress(''), 3000);
       setIsProcessing(false);
       return;
@@ -521,7 +521,7 @@ function App() {
 
     setHistory(prev => [...prev, historySnapshot]);
     setImages(updatedImages);
-    setGlobalProgress('Đã tự động căn giữa và thêm lề an toàn!');
+    setGlobalProgress(t('autoAlignDone'));
     setTimeout(() => setGlobalProgress(''), 3000);
     setIsProcessing(false);
   };
@@ -536,7 +536,7 @@ function App() {
   const handleExport = async () => {
     if (images.length === 0 || !croppedAreaPixels) return;
 
-    setGlobalProgress('Đang xử lý ảnh để tải về...');
+    setGlobalProgress(t('exporting'));
     const zip = new JSZip();
     let hasFiles = false;
 
