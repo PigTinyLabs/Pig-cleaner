@@ -631,14 +631,21 @@ function App() {
                 <h3>{t('uploadSpriteSheet', 'Tải lên 1 Sprite Sheet')}</h3>
                 <p style={{ color: '#aaa' }}>{t('uploadSpriteSheetDesc', 'Tool sẽ giúp bạn cắt thành nhiều ảnh nhỏ tự động.')}</p>
                 <input type="file" ref={spriteInputRef} onChange={handleSpriteSheetChange} accept="image/*" style={{ display: 'none' }} />
-                <a
-                  href={sampleSprite}
-                  download="sample_sprite.png"
-                  onClick={(e) => e.stopPropagation()}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop: '15px', color: '#10b981', textDecoration: 'underline', fontSize: '14px', zIndex: 10 }}
+                <span
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    try {
+                      const res = await fetch(sampleSprite);
+                      const blob = await res.blob();
+                      saveAs(blob, "sample_sprite.png");
+                    } catch (err) {
+                      console.error("Failed to download sample", err);
+                    }
+                  }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop: '15px', color: '#10b981', textDecoration: 'underline', fontSize: '14px', zIndex: 10, cursor: 'pointer' }}
                 >
                   <Download size={14} /> {t('downloadSample', 'Tải ảnh Gà Con (Mẫu) để cắt thử')}
-                </a>
+                </span>
               </div>
             )}
           </div>
