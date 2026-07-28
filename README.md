@@ -1,94 +1,68 @@
-# Pig Cleaner 🐷
+# 🐷 Pig Cleaner - The Desktop Pet that Eats Your Trash!
 
-Pig Cleaner là một ứng dụng dọn dẹp hệ thống (System Cleaner) kết hợp thú cưng ảo (Desktop Pet) siêu dễ thương dành cho macOS và Windows. Chú heo con sẽ đi dạo dưới đáy màn hình của bạn và giúp bạn dọn dẹp rác, cache để giải phóng dung lượng ổ cứng. Bạn càng dọn nhiều rác, heo sẽ càng ăn no và lớn nhanh!
-<img width="1507" height="950" alt="Screenshot 2026-07-14 at 14 30 35" src="https://github.com/user-attachments/assets/09bd8b30-793a-4d49-9265-be8cd6ae2bb1" />
+[![macOS](https://img.shields.io/badge/macOS-Supported-black.svg?logo=apple)]()
+[![Windows](https://img.shields.io/badge/Windows-Supported-blue.svg?logo=windows)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## ✨ Tính năng chính
+**Pig Cleaner** is a gamified System Cleaner & Virtual Desktop Pet for macOS and Windows. A cute little pig wanders around the bottom of your screen, helping you clean up junk files and free up disk space. The more trash it cleans, the chubbier and happier it gets!
 
-- **Nuôi heo bằng rác:** Dọn dẹp thùng rác (Trash) để "cho heo ăn". Thùng rác càng đầy, heo ăn càng no và lớn phổng phao.
-- **Dọn dẹp Cache thông minh:** Hỗ trợ quét và dọn dẹp an toàn các loại cache phổ biến chiếm nhiều dung lượng:
-  - System & Temp Files
-  - Trình duyệt (Chrome, Safari, Firefox)
-  - Lập trình (npm, yarn, pip, Homebrew, Xcode DerivedData, VS Code, Gradle, Docker)
-  
-  <img width="318" height="481" alt="Screenshot 2026-07-14 at 11 19 08" src="https://github.com/user-attachments/assets/87146206-7160-467d-97b6-47f8913c03e1" />
+<img width="1507" height="950" alt="Pig Cleaner Demo" src="https://github.com/user-attachments/assets/09bd8b30-793a-4d49-9265-be8cd6ae2bb1" />
 
-- **Tự động dọn dẹp:** Thiết lập khoảng thời gian để heo tự động đi ăn rác (30 phút, 1 tiếng, 2 tiếng, 6 tiếng).
-  
-<img width="322" height="502" alt="Screenshot 2026-07-14 at 11 17 47" src="https://github.com/user-attachments/assets/294be737-5161-44c7-8483-19e2fc56d36a" />
-
-- **Thú cưng tương tác:** Heo có các trạng thái tự nhiên (đi dạo, khịt mũi ngửi rác, ngủ khò, no căng bụng). Bạn cũng có thể dùng chuột kéo thả heo đi dạo, "ném" heo văng đi với quán tính vật lý, hoặc nhấp chuột vào heo để ra lệnh dọn rác ngay lập tức!
-- **Minh bạch & An toàn:** Giao diện xem thống kê chi tiết lượng rác đã dọn, dung lượng từng thư mục cache trước khi quyết định xóa.
-
-<img width="207" height="166" alt="Screenshot 2026-07-14 at 11 20 13" src="https://github.com/user-attachments/assets/e4d35dbf-78af-4ff9-8ce8-4ff08c50f554" />
-
-## 🚀 Cài đặt & Sử dụng
-
-**Yêu cầu hệ thống:** macOS hoặc Windows, Node.js (v18+).
-
-```bash
-# Clone repository
-git clone https://github.com/tinyspirits/Pig-cleaner.git
-cd Pig-cleaner
-
-# Cài đặt thư viện
-npm install
-
-# Khởi chạy chế độ Development
-npm run dev
-```
-
-> **⚠️ Lưu ý cấp quyền (Permissions):** Để dọn dẹp một số thư mục hệ thống (như Safari Cache hoặc Xcode DerivedData), ứng dụng cần được cấp quyền **Full Disk Access**.
-> *Vào System Settings → Privacy & Security → Full Disk Access → Thêm ứng dụng / Terminal của bạn vào.*
-
-## 📦 Đóng gói ứng dụng (Build File Cài Đặt)
-
-Để xuất ứng dụng thành file cài đặt chạy trên máy tính của bạn (`.dmg` cho macOS hoặc `.exe` cho Windows), bạn chỉ cần chạy lệnh sau:
-
-```bash
-npm run build
-```
-
-Sau khi quá trình hoàn tất (mất khoảng 1-2 phút), file cài đặt sẽ được xuất ra và nằm trong thư mục `release/` của dự án. Bạn có thể mở file này để cài đặt hoặc gửi cho bạn bè.
-
-## 🎨 Hướng dẫn Custom Sprite (Tự thiết kế heo của bạn)
-
-Bạn hoàn toàn có thể thay đổi hình ảnh chú heo thành nhân vật yêu thích của mình (mèo, chó, capybara...) bằng cách tạo các file ảnh (sprite) tuỳ chỉnh.
-
-**⭐ CÔNG CỤ TẠO CHARACTER (CHARACTER MAKER TOOL):**
-Chúng tôi đã xây dựng sẵn một công cụ chuyên dụng giúp bạn dễ dàng cắt Sprite Sheet, tự động tách nền bằng AI và căn chỉnh (Align & Pad) hàng loạt ảnh.
-1. Mở Terminal / Command Prompt tại thư mục dự án.
-2. Chạy lệnh: `cd character-tool && npm install && npm run dev`
-3. Mở trình duyệt tại địa chỉ `http://localhost:5174/`
-*(Trong tool có sẵn một nút để tải ảnh Gà con mẫu về tham khảo cách cắt Sprite Sheet).*
-
-Sau khi bạn đã dùng tool để cắt và tải về file `.zip` chứa các frame ảnh:
-
-1. **Chuẩn bị ảnh:** Giải nén file `.zip` vừa tải từ Tool. Các ảnh đã được tự động chuẩn hoá kích thước `150x150` và xoá nền.
-2. **Thay thế file ảnh:** 
-   Copy đè các file ảnh mới của bạn vào thư mục `src/renderer/assets/sprites/`. Các file mặc định được đặt tên theo hành động, ví dụ:
-   - Đi bộ: `walk1.png` đến `walk6.png`
-   - Đứng im / Ngửi rác: `idle1.png`, `sniff.png`
-   - Ăn / No: `happy1.png`, `happy2.png`
-   - Ngủ: `sleep1.png` đến `sleep4.png`
-   - Bị nhấc lên (Kéo thả): `drag1.png`, `drag2.png`, `drag3.png`
-3. **Tuỳ chỉnh Animation (Tốc độ, Frame):**
-   Nếu bạn có số lượng khung hình khác hoặc muốn chỉnh sửa tốc độ (fps) của từng hoạt ảnh, hãy mở file `src/renderer/components/PigPet.jsx` và chỉnh sửa biến `ANIMATIONS`:
-   ```javascript
-   const ANIMATIONS = {
-     idle: { frames: [idle1, idle1, idle1, sniff], fps: 2, loop: true },
-     walking: { frames: [walk3, walk4, walk5, walk1, walk6, walk2], fps: 10, loop: true },
-     eating: { frames: [happy1, happy2, happy1, happy2], fps: 6, loop: true },
-     // ... chỉnh sửa cấu hình tại đây
-   }
-   ```
-
-## ☕️ Ủng hộ dự án (Donate)
-
-Nếu bạn thấy chú heo này hữu ích và giúp máy của bạn sạch sẽ, mượt mà hơn, hãy ủng hộ tác giả một ly cà phê nhé! Sự ủng hộ của bạn là động lực rất lớn để tôi duy trì và phát triển thêm nhiều tính năng hay ho cho dự án. ❤️
-
-- **Momo:** `0359233523`
-- **PayPal:** `paypal.me/pigtiny`
 
 ---
-*Developed with ❤️ by [Tiny](https://github.com/pigtinylabs)*
+
+## 📥 Download & Install
+
+Don't want to build from source? Download the latest compiled version directly below:
+
+- 🍏 **[Download for macOS (.dmg) ➔](https://github.com/PigTinyLabs/Pig-cleaner/releases/latest)** *(Optimized for Intel & Apple Silicon M1/M2/M3)*
+- 🪟 **[Download for Windows (.exe) ➔](https://github.com/PigTinyLabs/Pig-cleaner/releases/latest)**
+
+*(Note: On macOS, please grant **Full Disk Access** in `System Settings → Privacy & Security` so the pig can properly clean system folders like Safari Cache or Xcode DerivedData).*
+
+---
+
+## ✨ Why Pig Cleaner?
+
+- 🐾 **Feed Your Pet with Trash:** Empty your system trash bin to "feed" the pig. Watch it grow and become delightfully chubby as you free up more space.
+- 💻 **Developer-Focused Cache Cleaning:** Say goodbye to gigabytes of hidden dev junk. Pig Cleaner safely scans and wipes heavy caches from:
+  - `npm`, `yarn`, `pip`, `Homebrew`
+  - `Docker` containers & volumes
+  - `Xcode DerivedData`, `VS Code`, `Gradle`
+- ⏰ **Auto-Foraging Mode:** Set a timer (30 mins, 1 hour, 6 hours) and the pig will automatically go hunting for junk files in the background.
+- 🎮 **Interactive Physics:** The pig has natural states (walking, sniffing, sleeping, full belly). You can drag and drop it, toss it across the screen with physical inertia, or click it to command an instant cleanup!
+- 🛡️ **Transparent & Safe:** Review detailed statistics of your junk files and folder sizes before making any deletion decisions.
+
+<p align="center">
+  <img width="318" alt="Feature 1" src="https://github.com/user-attachments/assets/87146206-7160-467d-97b6-47f8913c03e1" />
+  <img width="322" alt="Feature 2" src="https://github.com/user-attachments/assets/294be737-5161-44c7-8483-19e2fc56d36a" />
+</p>
+
+---
+
+## ☕️ Support & Donate
+
+**Pig Cleaner is 100% free and open-source.** 
+
+If this little pig helped you free up 10GB of SSD storage, saved you hours of manual cleaning, or just brought a smile to your workday, consider buying me a coffee! Your support keeps the pig fed and motivates me to develop new awesome features. ❤️
+
+*   💸 **PayPal:** [paypal.me/pigtiny](https://paypal.me/pigtiny)
+*   ☕ **Buy Me A Coffee / Ko-fi:** *(Highly recommend creating an account and putting the link here!)*
+*   🇻🇳 **Momo (Vietnam):** `0359233523`
+
+---
+
+## 🛠️ For Developers (Build from source)
+
+**Prerequisites:** macOS or Windows, Node.js (v18+).
+
+```bash
+# Clone the repository
+git clone [https://github.com/PigTinyLabs/Pig-cleaner.git](https://github.com/PigTinyLabs/Pig-cleaner.git)
+cd Pig-cleaner
+
+# Install dependencies
+npm install
+
+# Start Development mode
+npm run dev
