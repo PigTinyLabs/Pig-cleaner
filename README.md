@@ -15,8 +15,8 @@
 
 Don't want to build from source? Download the latest compiled version directly below:
 
-- 🍏 **[Download for macOS (.dmg) ➔](https://github.com/PigTinyLabs/Pig-cleaner/releases/latest)** *(Optimized for Intel & Apple Silicon M1/M2/M3)*
-- 🪟 **[Download for Windows (.exe) ➔](https://github.com/PigTinyLabs/Pig-cleaner/releases/latest)**
+- 🍏 **[Download for macOS (.dmg)](https://github.com/PigTinyLabs/Pig-cleaner/releases/latest)** *(Optimized for Intel & Apple Silicon M1/M2/M3)*
+- 🪟 **[Download for Windows (.exe)](https://github.com/PigTinyLabs/Pig-cleaner/releases/latest)**
 
 *(Note: On macOS, please grant **Full Disk Access** in `System Settings → Privacy & Security` so the pig can properly clean system folders like Safari Cache or Xcode DerivedData).*
 
