@@ -1,0 +1,145 @@
+name: Production Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Setup Apple Certificate (macOS)
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        env:
+          MAC_CERTS: ${{ secrets.MAC_CERTS }}
+          MAC_CERTS_PASSWORD: ${{ secrets.MAC_CERTS_PASSWORD }}
+        run: |
+          if [ -n "$MAC_CERTS" ]; then
+            echo "$MAC_CERTS" | base64 --decode > "$GITHUB_WORKSPACE/cert.p12"
+            echo "CSC_LINK=$GITHUB_WORKSPACE/cert.p12" >> $GITHUB_ENV
+            echo "CSC_KEY_PASSWORD=$MAC_CERTS_PASSWORD" >> $GITHUB_ENV
+          else
+            echo "No MAC_CERTS found, skipping code signing."
+          fi
+
+      - name: Build Application (Pig-cleaner)
+        run: npm run build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Application (Character Maker Tool)
+        working-directory: ./character-tool
+        run: npm install && npm run build:electron
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.os }}
+          path: |
+            release/*.dmg
+            release/*.exe
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Get Tag Version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VERSION }}
+          name: "🐷 Pig Cleaner Bản Chính Thức (${{ env.VERSION }})"
+          body: |
+            Bản phát hành chính thức ${{ env.VERSION }} của Pig Cleaner.
+
+            <details>
+            <summary>🍏 <b>Dành cho macOS (Chip M1/M2/M3 và Intel)</b></summary>
+            
+            1. Ứng dụng dọn rác chính: `Pig.Cleaner-1.0.0-mac.dmg` (hoặc tương tự)
+            2. Ứng dụng hỗ trợ cắt nhân vật: `Character.Maker.Tool-1.0.0-mac.dmg` (hoặc tương tự)
+
+            ⚠️ **Hướng dẫn cài đặt trên macOS (Quan trọng):**
+            Sau khi tải file `.dmg` và kéo thả `.app` vào thư mục **Applications** (Ứng dụng), bạn có thể gặp cảnh báo bảo mật. Vui lòng xử lý theo 1 trong 2 trường hợp sau:
+            
+            **👉 Trường hợp 1: Báo lỗi "Unidentified Developer" (Nhà phát triển không xác định)**
+            - Mở **System Settings** (Cài đặt hệ thống) -> **Privacy & Security** (Quyền riêng tư & Bảo mật).
+            - Cuộn xuống dưới cùng, tìm dòng chữ báo ứng dụng bị chặn và bấm nút **Open Anyway** (Vẫn mở).
+            
+            **👉 Trường hợp 2 (Trên macOS đời mới): Báo lỗi "App is damaged..." (App bị hỏng)**
+            - Mở ứng dụng **Terminal** trên máy Mac.
+            - Chạy dòng lệnh sau và ấn Enter (lệnh này giúp xoá nhãn cách ly an toàn của file tải từ internet, thay tên app tương ứng):
+               ```bash
+               xattr -cr /Applications/pig-cleaner.app
+               xattr -cr "/Applications/Character Maker Tool.app"
+               ```
+            - Mở lại ứng dụng bình thường!
+            </details>
+
+            <details>
+            <summary>🪟 <b>Dành cho Windows</b></summary>
+            
+            1. Ứng dụng dọn rác chính: `Pig.Cleaner... Setup.exe`
+            2. Ứng dụng hỗ trợ cắt nhân vật: `Character.Maker.Tool... Setup.exe`
+
+            - Tải file `.exe` ở dưới và cài đặt bình thường.
+            
+            ⚠️ **Hướng dẫn bỏ qua màn hình xanh SmartScreen:**
+            Vì ứng dụng chưa có chứng chỉ trả phí của Microsoft, Windows sẽ hiện bảng xanh báo động "Windows protected your PC". Để mở app, bạn có 2 cách:
+            - **Cách 1 (Nhanh nhất):** Bấm vào dòng chữ **"More info"** (Thêm thông tin), sau đó bấm nút **"Run anyway"** (Vẫn chạy).
+            - **Cách 2 (Xoá vĩnh viễn cảnh báo):** Trước khi mở, nhấn chuột phải vào file `.exe` -> Chọn **Properties** (Thuộc tính) -> Ở thẻ General, tick vào ô **Unblock** (Mở khoá) ở dưới cùng -> Nhấn OK.
+            </details>
+            
+            <details>
+            <summary>🎨 <b>Hướng dẫn tự làm nhân vật (Character Maker Tool)</b></summary>
+            
+            Công cụ **Character Maker Tool** đi kèm giúp bạn dễ dàng biến bất kỳ hình ảnh nào thành thú cưng dọn rác của riêng mình:
+            1. Mở ứng dụng **Character Maker Tool** (cài đặt từ các file tải ở dưới).
+            2. Bấm nút tải ảnh lên hoặc chọn từ thư viện ảnh có sẵn.
+            3. Kéo thả vùng ảnh (Crop) để chọn chính xác hình ảnh nhân vật mà bạn muốn.
+            4. Hệ thống AI sẽ tự động tách nền (xóa phông) và tạo sprite sheet (bản vẽ chuyển động) cho các trạng thái: đi lại, ngửi rác, ngủ...
+            5. Nhấn nút **"Lưu bộ nhân vật (Export ZIP)"** để tải file `.zip` về máy.
+            6. Mở ứng dụng **Pig Cleaner** chính, chuột phải vào thú cưng -> **Cài đặt** -> cuộn xuống mục **Chọn nhân vật**.
+            7. Bấm nút **"Thêm nhân vật (.zip)"** và chọn file `.zip` vừa tạo. Chọn nhân vật mới từ danh sách để bắt đầu nuôi!
+            </details>
+            
+            📝 **Dành cho Lập trình viên:**
+            Nếu bạn muốn tự custom, chỉnh sửa code và tự đóng gói (build) ứng dụng cho riêng mình, hãy xem hướng dẫn chi tiết tại [Trang chủ dự án (README)](https://github.com/PigTinyLabs/Pig-cleaner).
+          prerelease: false
+          files: artifacts/*
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
